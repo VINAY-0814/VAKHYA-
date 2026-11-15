@@ -207,8 +207,8 @@ export class WebcamSignTracker {
     this.offCtx = this.offscreen.getContext("2d", { willReadFrequently: true });
 
     this.snapCanvas = document.createElement("canvas");
-    this.snapCanvas.width = 320;
-    this.snapCanvas.height = 240;
+    this.snapCanvas.width = 384;
+    this.snapCanvas.height = 288;
     this.snapCtx = this.snapCanvas.getContext("2d");
   }
 
@@ -223,7 +223,7 @@ export class WebcamSignTracker {
     }
     this.snapCtx.drawImage(video, 0, 0, w, h);
     this.snapCtx.restore();
-    return this.snapCanvas.toDataURL("image/jpeg", 0.75);
+    return this.snapCanvas.toDataURL("image/jpeg", 0.78);
   }
 
   detectFrame(video: HTMLVideoElement): HandDetectionResult {
@@ -304,7 +304,7 @@ export class WebcamSignTracker {
           let leftOpen = 0.3;
 
           const labels = res.handednesses?.map((h) => h[0]?.categoryName || "Right") || [];
-          const summaryParts: string[] = [];
+          const summaryParts: string[] = [`hands=${res.landmarks.length}`, `motion=${motionEnergy.toFixed(1)}`];
           const analyzedHands: Array<{
             label: string;
             wrist: { x: number; y: number; z: number };
@@ -316,9 +316,10 @@ export class WebcamSignTracker {
             const label = labels[i] || (lm[0].x >= 0.5 ? "Right" : "Left");
             const wrist = lm[0];
             const fingers = getFingerStates(lm);
+            const zone = wrist.y < 0.36 ? "head/face" : wrist.y < 0.65 ? "chest" : "lower";
             const fingerBits = `${Number(fingers.thumb)},${Number(fingers.index)},${Number(fingers.middle)},${Number(fingers.ring)},${Number(fingers.pinky)}`;
             summaryParts.push(
-              `${label}:wrist(${wrist.x.toFixed(2)},${wrist.y.toFixed(2)}),fingers=[${fingerBits}],open=${fingers.openScore}`
+              `${label}:wrist(${wrist.x.toFixed(2)},${wrist.y.toFixed(2)},${zone}),fingers=[${fingerBits}],open=${fingers.openScore}`
             );
             analyzedHands.push({ label, wrist, thumbTip: lm[4], fingers });
             if (label === "Right") {
@@ -330,10 +331,15 @@ export class WebcamSignTracker {
             }
           });
 
-          const localSign = classifyStaticSign(analyzedHands, motionEnergy);
-          if (localSign) {
-            summaryParts.push(`localHint=${localSign.gloss}`);
+          if (analyzedHands.length >= 2) {
+            const dist = Math.hypot(
+              analyzedHands[0].wrist.x - analyzedHands[1].wrist.x,
+              analyzedHands[0].wrist.y - analyzedHands[1].wrist.y
+            );
+            summaryParts.push(`twoHandDist=${dist.toFixed(2)}`);
           }
+
+          const localSign = classifyStaticSign(analyzedHands, motionEnergy);
 
           const elbowAngle = Math.round(Math.max(25, Math.min(130, 120 - rw[1] * 85)));
           return {
@@ -458,4 +464,14 @@ export function drawRealHandSkeleton(
       ctx.fill();
     });
   });
+}
+
+export function downsampleFrames(frames: string[], maxCount = 6): string[] {
+  if (frames.length <= maxCount) return frames;
+  const result: string[] = [];
+  for (let i = 0; i < maxCount; i++) {
+    const idx = Math.round((i * (frames.length - 1)) / (maxCount - 1));
+    result.push(frames[idx]);
+  }
+  return result;
 }

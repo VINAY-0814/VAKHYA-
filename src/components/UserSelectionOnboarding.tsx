@@ -33,7 +33,7 @@ export default function UserSelectionOnboarding({ phoneNumber, onComplete }: Use
 
   // Selection states
   const [userType, setUserType] = useState<UserType | null>(null);
-  const [signLanguage, setSignLanguage] = useState<SignLanguage>(SignLanguage.ASL);
+  const [signLanguage, setSignLanguage] = useState<SignLanguage>(SignLanguage.ISL);
   const [spokenLang, setSpokenLang] = useState("English (US)");
   const [voiceName, setVoiceName] = useState("Zephyr");
   const [pitch, setPitch] = useState(1.0);

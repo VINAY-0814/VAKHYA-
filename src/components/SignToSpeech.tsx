@@ -9,6 +9,7 @@ import { Camera, RefreshCw, Volume2, Sparkles, HelpCircle, CornerDownLeft, Alert
 import { UserProfile, SignLanguage } from "../types";
 import { theme } from "../theme";
 import {
+  downsampleFrames,
   drawRealHandSkeleton,
   initHandLandmarker,
   PoseKeyframe,
@@ -35,6 +36,10 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
   const [currentGlosses, setCurrentGlosses] = useState<string>("");
   const [translatedSentence, setTranslatedSentence] = useState("");
   const [confidence, setConfidence] = useState<number | null>(null);
+  const [activeSignLang, setActiveSignLang] = useState<string>(
+    profile.primarySignLanguage || "ISL"
+  );
+  const [clarificationPrompt, setClarificationPrompt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -46,6 +51,10 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
   const frameSnapsRef = useRef<string[]>([]);
   const handSummaryRef = useRef<string>("");
   const lastAutoInferRef = useRef<number>(0);
+  const recentSentencesRef = useRef<string[]>([]);
+  const lastSentRef = useRef<{ sentence: string; ts: number }>({ sentence: "", ts: 0 });
+  const activeSignLangRef = useRef<string>(activeSignLang);
+  activeSignLangRef.current = activeSignLang;
 
   // Toggle Camera
   useEffect(() => {
@@ -91,7 +100,7 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
     framesBase64: string[],
     handSummary: string
   ) => {
-    if (poses.length < 4 || isTranslating) return;
+    if (poses.length < 4 || framesBase64.length === 0 || isTranslating) return;
     setIsTranslating(true);
     setError(null);
     try {
@@ -99,10 +108,11 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          pose_sequence: poses.slice(-18),
-          frames_base64: framesBase64.slice(0, 3),
+          pose_sequence: poses.slice(-20),
+          frames_base64: downsampleFrames(framesBase64, 6),
           hand_summary: handSummary,
-          signLanguage: profile.primarySignLanguage || "ASL",
+          signLanguage: activeSignLangRef.current || "ISL",
+          recentContext: recentSentencesRef.current.slice(-3),
           voicePreset: profile.voiceSettings.voiceName,
           pitch: profile.voiceSettings.pitch,
           speed: profile.voiceSettings.speed,
@@ -110,11 +120,32 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Sign-to-voice recognition failed");
+
+      if (data.needsClarification) {
+        setClarificationPrompt(
+          data.clarificationPrompt ||
+            "Sign was unclear — please keep both hands and face in frame and sign slightly slower."
+        );
+        return;
+      }
+
       if (data.recognized === false) return;
+      setClarificationPrompt(null);
+
       if (data.gloss) setCurrentGlosses(data.gloss);
       if (data.sentence) {
+        const now = Date.now();
+        const isDup =
+          lastSentRef.current.sentence.toLowerCase() === String(data.sentence).toLowerCase() &&
+          now - lastSentRef.current.ts < 5000;
+        if (isDup) return;
+        lastSentRef.current = { sentence: data.sentence, ts: now };
+        recentSentencesRef.current = [
+          ...recentSentencesRef.current.slice(-3),
+          String(data.sentence),
+        ];
         setTranslatedSentence(data.sentence);
-        setConfidence(data.confidence ?? 0.85);
+        setConfidence(data.confidence ?? 0.88);
         playTranslatedAudio(data.sentence, data.audioWavBase64);
       }
     } catch (err: any) {
@@ -134,6 +165,7 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
 
     let frameCounter = 0;
     let peakMotion = 0;
+    let quietFrames = 0;
 
     const render = () => {
       if (!isCameraActiveRef.current) return;
@@ -150,28 +182,30 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
 
         if (detection.hasActiveHands && frameCounter % 3 === 0) {
           poseBufferRef.current.push(detection.poseFrame);
-          if (poseBufferRef.current.length > 20) {
+          if (poseBufferRef.current.length > 24) {
             poseBufferRef.current.shift();
           }
           handSummaryRef.current = detection.handSummary;
           if (detection.motionEnergy > peakMotion) peakMotion = detection.motionEnergy;
 
-          if (
-            frameSnapsRef.current.length === 0 ||
-            (poseBufferRef.current.length === 4 && frameSnapsRef.current.length < 2) ||
-            (poseBufferRef.current.length >= 8 && frameSnapsRef.current.length < 3)
-          ) {
+          if (frameSnapsRef.current.length < 12) {
             const snap = trackerRef.current.captureCompactFrame(video, true);
             if (snap) frameSnapsRef.current.push(snap);
           }
 
+          if (detection.motionEnergy < 1.8) {
+            quietFrames += 1;
+          } else {
+            quietFrames = 0;
+          }
+
           const now = Date.now();
           const hasSignal =
-            Boolean(detection.detectedLocalSign) ||
-            (detection.engine === "mediapipe-hand-landmarker" && poseBufferRef.current.length >= 6) ||
-            peakMotion > 2.4;
+            detection.engine === "mediapipe-hand-landmarker" || peakMotion > 2.2;
+          const phraseDone = poseBufferRef.current.length >= 6 && quietFrames >= 3;
+          const chunkFull = poseBufferRef.current.length >= 14;
 
-          if (hasSignal && poseBufferRef.current.length >= 6 && now - lastAutoInferRef.current > 1800) {
+          if (hasSignal && (phraseDone || chunkFull) && now - lastAutoInferRef.current > 1800) {
             lastAutoInferRef.current = now;
             const snapshot = [...poseBufferRef.current];
             const snaps = [...frameSnapsRef.current];
@@ -179,12 +213,13 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
             poseBufferRef.current = [];
             frameSnapsRef.current = [];
             peakMotion = 0;
+            quietFrames = 0;
             void inferPoseBuffer(snapshot, snaps, summary);
           }
         } else if (
           !detection.hasActiveHands &&
           poseBufferRef.current.length >= 5 &&
-          (handSummaryRef.current.includes("localHint=") || peakMotion > 2.4) &&
+          (handSummaryRef.current.includes("hands=") || peakMotion > 2.2) &&
           Date.now() - lastAutoInferRef.current > 1800
         ) {
           lastAutoInferRef.current = Date.now();
@@ -194,6 +229,7 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
           poseBufferRef.current = [];
           frameSnapsRef.current = [];
           peakMotion = 0;
+          quietFrames = 0;
           void inferPoseBuffer(snapshot, snaps, summary);
         }
       }
@@ -269,7 +305,23 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
           </span>
           <h3 className="text-lg font-bold text-[var(--text-primary)]">Sign-to-Speech & Captions</h3>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-[var(--glass-input-bg)] border border-[var(--border-subtle)] rounded-xl p-0.5 text-xs">
+            {(["ISL", "ASL"] as const).map((lang) => (
+              <button
+                key={lang}
+                type="button"
+                onClick={() => setActiveSignLang(lang)}
+                className={`px-2.5 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
+                  activeSignLang === lang
+                    ? "bg-[#8A5CF6] text-white"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                {lang}
+              </button>
+            ))}
+          </div>
           <button
             id="camera-active-toggle"
             onClick={() => setIsCameraActive(!isCameraActive)}
@@ -284,6 +336,24 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
           </button>
         </div>
       </div>
+
+      {clarificationPrompt && (
+        <div className="p-4 bg-amber-500/10 border border-amber-500/35 rounded-xl flex items-center justify-between gap-3 text-amber-700 dark:text-amber-200 text-xs">
+          <div className="flex items-center gap-2.5">
+            <HelpCircle className="w-5 h-5 flex-shrink-0 text-amber-500" />
+            <span>
+              <strong>Clarification requested:</strong> {clarificationPrompt}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setClarificationPrompt(null)}
+            className="text-amber-600 dark:text-amber-300 underline cursor-pointer shrink-0"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="p-4 bg-red-500/10 dark:bg-red-500/20 border border-red-500/40 rounded-xl flex items-center gap-3 text-red-600 dark:text-red-200 text-xs">

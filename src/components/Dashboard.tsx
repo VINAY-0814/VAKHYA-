@@ -547,7 +547,7 @@ export default function Dashboard({ profile, onLogout }: DashboardProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sentence: phrase,
-          signLanguage: currentUserProfile.primarySignLanguage || "ASL",
+          signLanguage: currentUserProfile.primarySignLanguage || "ISL",
         }),
       });
       const data = await res.json();
@@ -1084,7 +1084,7 @@ export default function Dashboard({ profile, onLogout }: DashboardProps) {
                                   headers: { "Content-Type": "application/json" },
                                   body: JSON.stringify({
                                     sentence: phrase,
-                                    signLanguage: currentUserProfile.primarySignLanguage || "ASL",
+                                    signLanguage: currentUserProfile.primarySignLanguage || "ISL",
                                   }),
                                 });
                                 const data = await res.json();
@@ -1202,7 +1202,7 @@ export default function Dashboard({ profile, onLogout }: DashboardProps) {
           name: currentUserProfile.name,
           userType: currentUserProfile.userType,
           avatar: currentUserProfile.avatarUrl,
-          signLanguage: currentUserProfile.primarySignLanguage || "ASL",
+          signLanguage: currentUserProfile.primarySignLanguage || "ISL",
           voiceSettings: currentUserProfile.voiceSettings,
         }}
         isInitiator={isCallInitiator}

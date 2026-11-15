@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { realtimeClient, SignalingEvent } from "../../services/realtimeClient";
 import {
+  downsampleFrames,
   drawRealHandSkeleton,
   initHandLandmarker,
   PoseKeyframe,
@@ -178,7 +179,7 @@ export default function InCallScreen({
   const [showQuickMessageBar, setShowQuickMessageBar] = useState(false);
   const [quickText, setQuickText] = useState("");
   const [activeSignLanguage, setActiveSignLanguage] = useState(
-    localUser?.signLanguage || "ASL"
+    localUser?.signLanguage || "ISL"
   );
   const [callDuration, setCallDuration] = useState(0);
 
@@ -193,6 +194,7 @@ export default function InCallScreen({
   const [recentCaptions, setRecentCaptions] = useState<Array<{ id: number; speaker: string; text: string; gloss?: string }>>([]);
   const [captionSpeaker, setCaptionSpeaker] = useState("");
   const [outgoingCaption, setOutgoingCaption] = useState("");
+  const [clarificationPrompt, setClarificationPrompt] = useState<string | null>(null);
   const [lastRecognizedSign, setLastRecognizedSign] = useState("");
   const [handDetected, setHandDetected] = useState(false);
   const [isTranslatingSign, setIsTranslatingSign] = useState(false);
@@ -230,10 +232,11 @@ export default function InCallScreen({
   const poseBufferRef = useRef<PoseKeyframe[]>([]);
   const frameSnapsRef = useRef<string[]>([]);
   const handSummaryRef = useRef<string>("");
-  const localSignVotesRef = useRef<string[]>([]);
   const peakMotionRef = useRef<number>(0);
   const quietFramesAfterMotionRef = useRef<number>(0);
   const lastPoseInferRef = useRef<number>(0);
+  const lastClarifyTsRef = useRef<number>(0);
+  const recentSignedSentencesRef = useRef<string[]>([]);
   const lastSentSignRef = useRef<{ sentence: string; ts: number }>({ sentence: "", ts: 0 });
   const lastSpokenRef = useRef<{ text: string; ts: number }>({ text: "", ts: 0 });
   const pendingSpeechRef = useRef<{ text: string; audioWavBase64?: string | null } | null>(null);
@@ -1241,7 +1244,7 @@ export default function InCallScreen({
       framesBase64: string[],
       handSummary: string
     ) => {
-      if (isInferringPoseRef.current || poses.length < 4) return;
+      if (isInferringPoseRef.current || poses.length < 4 || framesBase64.length === 0) return;
       isInferringPoseRef.current = true;
       setIsTranslatingSign(true);
       try {
@@ -1250,27 +1253,49 @@ export default function InCallScreen({
           pitch: voiceSettingsRef.current?.pitch || 1.0,
           speed: voiceSettingsRef.current?.speed || 1.0,
         };
+        const sampledFrames = downsampleFrames(framesBase64, 6);
         const res = await fetch("/api/translate/pose-to-voice", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            pose_sequence: poses.slice(-18),
-            frames_base64: framesBase64.slice(0, 3),
+            pose_sequence: poses.slice(-20),
+            frames_base64: sampledFrames,
             hand_summary: handSummary,
             signLanguage: activeSignLanguage,
+            recentContext: recentSignedSentencesRef.current.slice(-3),
             voicePreset: ttsOpts.voiceName,
             pitch: ttsOpts.pitch,
             speed: ttsOpts.speed,
           }),
         });
         const data = await res.json();
+        const now = Date.now();
+
+        if (res.ok && data.needsClarification) {
+          if (now - lastClarifyTsRef.current > 4500) {
+            lastClarifyTsRef.current = now;
+            const msg =
+              data.clarificationPrompt ||
+              "That sign was unclear — please keep both hands and face visible and sign slightly slower.";
+            setClarificationPrompt(msg);
+            setTimeout(() => {
+              setClarificationPrompt((prev) => (prev === msg ? null : prev));
+            }, 4800);
+          }
+          return;
+        }
+
         if (res.ok && data.recognized !== false && data.sentence) {
-          const now = Date.now();
+          setClarificationPrompt(null);
           const isDup =
             lastSentSignRef.current.sentence.toLowerCase() === String(data.sentence).toLowerCase() &&
-            now - lastSentSignRef.current.ts < 3200;
+            now - lastSentSignRef.current.ts < 5000;
           if (!isDup) {
             lastSentSignRef.current = { sentence: data.sentence, ts: now };
+            recentSignedSentencesRef.current = [
+              ...recentSignedSentencesRef.current.slice(-3),
+              String(data.sentence),
+            ];
             setOutgoingCaption(`You signed (${data.gloss || "SIGN"}): "${data.sentence}"`);
             setLastRecognizedSign(data.sentence);
             setTimeout(() => {
@@ -1315,28 +1340,17 @@ export default function InCallScreen({
     const flushSignBuffer = () => {
       const snapshot = [...poseBufferRef.current];
       const snaps = [...frameSnapsRef.current];
-      if (snaps.length < 3 && localVideoRef.current && trackerRef.current) {
+      if (localVideoRef.current && trackerRef.current) {
         const finalSnap = trackerRef.current.captureCompactFrame(
           localVideoRef.current,
           isFrontCameraRef.current
         );
         if (finalSnap) snaps.push(finalSnap);
       }
-
-      const votes = localSignVotesRef.current;
-      let summary = handSummaryRef.current;
-      if (votes.length >= 3) {
-        const counts: Record<string, number> = {};
-        for (const v of votes) counts[v] = (counts[v] || 0) + 1;
-        const [topGloss, topCount] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0] || [];
-        if (topGloss && topCount >= 3 && peakMotionRef.current < 1.6) {
-          summary = `${summary}; localHint=${topGloss}; steadyHint=true`;
-        }
-      }
+      const summary = handSummaryRef.current;
 
       poseBufferRef.current = [];
       frameSnapsRef.current = [];
-      localSignVotesRef.current = [];
       peakMotionRef.current = 0;
       quietFramesAfterMotionRef.current = 0;
       void triggerInCallPoseToVoice(snapshot, snaps, summary);
@@ -1377,21 +1391,14 @@ export default function InCallScreen({
 
           if (detection.hasActiveHands && frameCount % 4 === 0) {
             poseBufferRef.current.push(detection.poseFrame);
-            if (poseBufferRef.current.length > 20) poseBufferRef.current.shift();
+            if (poseBufferRef.current.length > 24) poseBufferRef.current.shift();
             handSummaryRef.current = detection.handSummary;
-            if (detection.detectedLocalSign?.gloss) {
-              localSignVotesRef.current.push(detection.detectedLocalSign.gloss);
-              if (localSignVotesRef.current.length > 10) localSignVotesRef.current.shift();
-            }
             if (detection.motionEnergy > peakMotionRef.current) {
               peakMotionRef.current = detection.motionEnergy;
             }
 
-            if (
-              frameSnapsRef.current.length === 0 ||
-              (poseBufferRef.current.length === 4 && frameSnapsRef.current.length < 2) ||
-              (poseBufferRef.current.length >= 8 && frameSnapsRef.current.length < 3)
-            ) {
+            // Capture chronological frames evenly across continuous multi-hand/face gesture
+            if (frameSnapsRef.current.length < 12) {
               const snap = trackerRef.current.captureCompactFrame(
                 localVideoRef.current,
                 isFrontCameraRef.current
@@ -1407,18 +1414,15 @@ export default function InCallScreen({
 
             const isMediaPipeHit = detection.engine === "mediapipe-hand-landmarker";
             const hasIntentionalSign =
-              Boolean(detection.detectedLocalSign) ||
-              (isMediaPipeHit && poseBufferRef.current.length >= 5) ||
-              peakMotionRef.current > 1.5;
-            const gestureCompleted =
-              (Boolean(detection.detectedLocalSign) && poseBufferRef.current.length >= 5) ||
-              (poseBufferRef.current.length >= 6 && quietFramesAfterMotionRef.current >= 2);
-            const bufferFull = poseBufferRef.current.length >= 10;
+              isMediaPipeHit || peakMotionRef.current > 2.2;
+            const phraseCompleted =
+              poseBufferRef.current.length >= 6 && quietFramesAfterMotionRef.current >= 3;
+            const chunkFull = poseBufferRef.current.length >= 14;
 
             if (
               hasIntentionalSign &&
-              (gestureCompleted || bufferFull) &&
-              now - lastPoseInferRef.current > 1400
+              (phraseCompleted || chunkFull) &&
+              now - lastPoseInferRef.current > 1600
             ) {
               lastPoseInferRef.current = now;
               flushSignBuffer();
@@ -1426,8 +1430,8 @@ export default function InCallScreen({
           } else if (
             !detection.hasActiveHands &&
             poseBufferRef.current.length >= 5 &&
-            (handSummaryRef.current.includes("localHint=") || peakMotionRef.current > 1.5) &&
-            now - lastPoseInferRef.current > 1400
+            (handSummaryRef.current.includes("hands=") || peakMotionRef.current > 2.2) &&
+            now - lastPoseInferRef.current > 1600
           ) {
             lastPoseInferRef.current = now;
             flushSignBuffer();
@@ -1546,7 +1550,7 @@ export default function InCallScreen({
             </button>
           )}
           <div className="flex items-center bg-[#1D2538]/90 border border-white/10 rounded-lg p-0.5 text-xs">
-            {(["ASL", "ISL"] as const).map((lang) => (
+            {(["ISL", "ASL"] as const).map((lang) => (
               <button
                 key={lang}
                 onClick={() => setActiveSignLanguage(lang)}
@@ -1752,6 +1756,23 @@ export default function InCallScreen({
                   <p className="text-xs text-slate-300 text-center">
                     Speak or sign clearly to your camera — live translations appear here.
                   </p>
+                )}
+
+                {clarificationPrompt && (
+                  <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-amber-400/20 text-amber-200">
+                    <p className="text-xs leading-snug">
+                      <span className="font-semibold text-amber-300">Clarify: </span>
+                      {clarificationPrompt}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setClarificationPrompt(null)}
+                      className="p-1 text-amber-300/70 hover:text-amber-200 cursor-pointer shrink-0"
+                      aria-label="Dismiss clarification prompt"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 )}
 
                 {outgoingCaption && (

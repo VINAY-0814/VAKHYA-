@@ -62,7 +62,7 @@ async function callGeminiJson(contents: any, config: Record<string, any>): Promi
         contents,
         config: {
           ...config,
-          abortSignal: AbortSignal.timeout(5000),
+          abortSignal: AbortSignal.timeout(8500),
         },
       });
       preferredGeminiModel = model;
@@ -991,7 +991,8 @@ async function startServer() {
         speed = 1.0,
         frames_base64,
         hand_summary,
-        signLanguage = "ASL",
+        signLanguage = "ISL",
+        recentContext,
         voicePreset,
       } = req.body;
 
@@ -1010,29 +1011,49 @@ async function startServer() {
         THANK_YOU: "Thank you!",
       };
 
-      const STEADY_ICONIC_SIGNS = new Set(["I_LOVE_YOU", "CALL_ME", "OK", "GOOD", "TWO", "THREE"]);
-      const hintMatch = String(hand_summary || "").match(/localHint=([A-Z_]+)/);
-      const localHintGloss = hintMatch ? hintMatch[1] : undefined;
-      const isSteadyHint = String(hand_summary || "").includes("steadyHint=true");
-      let recognizedGloss: string | undefined = gloss_hint
-        ? String(gloss_hint).toUpperCase()
-        : localHintGloss && (isSteadyHint || STEADY_ICONIC_SIGNS.has(localHintGloss))
-          ? localHintGloss
-          : undefined;
-      let visionSentence: string | undefined;
-      let visionConfidence: number | undefined;
-      let visionModel: string | undefined;
+      const hasCameraFrames = Array.isArray(frames_base64) && frames_base64.length > 0;
 
-      if (ai && Array.isArray(frames_base64) && frames_base64.length > 0 && !recognizedGloss) {
+      // Primary: True Open-Vocabulary Multimodal Vision for ALL live camera gestures (never bypassed by fixed 12/32 word lists)
+      if (ai && hasCameraFrames && !gloss_hint) {
+        const sampledFrames: string[] = frames_base64.slice(0, 8);
+        const contextLines = Array.isArray(recentContext) && recentContext.length > 0
+          ? `Recent conversation context (prior turns): ${recentContext.slice(-3).map((s: any) => `"${String(s)}"`).join(" -> ")}.`
+          : "No prior conversation turns yet.";
+
+        const langFocus =
+          String(signLanguage).toUpperCase() === "ASL"
+            ? "American Sign Language (ASL)"
+            : String(signLanguage).toUpperCase() === "AUTO"
+              ? "Indian Sign Language (ISL) and American Sign Language (ASL)"
+              : "Indian Sign Language (ISL) — including two-handed regional/standard ISL signs, fingerspelling, and conversational grammar";
+
         try {
-          const parts: any[] = frames_base64.slice(0, 3).map((img: string) => ({
+          const parts: any[] = sampledFrames.map((img: string) => ({
             inlineData: {
               mimeType: "image/jpeg",
               data: String(img).replace(/^data:image\/\w+;base64,/, ""),
             },
           }));
           parts.push({
-            text: `You are Vakhya's real-time ${signLanguage} sign language interpreter during a live video call. Inspect these sequential webcam frames (MediaPipe hand geometry: ${hand_summary || "no landmarks"}). If hands are missing, blurry, blank, or not clearly performing an intentional ${signLanguage} sign, set hasSign to false and confidence below 0.5. Never guess unrelated random words. When a clear ${signLanguage} sign or gesture is shown (e.g. Hello, Thank you, Please, Sorry, Yes, No, Help, Good morning, How are you, Wait, Stop, Water, Doctor, Home, Name, etc.), return its GLOSS, natural conversational English phrase in sentence, and confidence (0..1).`,
+            text: `You are Vakhya's Open-Vocabulary Real-Time Sign Language Interpreter during a live video call.
+Target sign system: ${langFocus}.
+You are receiving ${sampledFrames.length} chronological video frames spanning a gesture or conversational phrase (from start to end), plus MediaPipe hand-landmark telemetry: ${hand_summary || "no landmarks"}.
+${contextLines}
+
+Analyze ALL multimodal cues holistically — DO NOT restrict yourself to any small predefined word list:
+1. Both hands & fingers: 1-hand and 2-hand configurations, symmetrical/asymmetrical interactions, palm orientation, fingerspelling, numbers.
+2. Continuous motion trajectory across Frame 1 -> Frame ${sampledFrames.length}: waving, tapping, circular paths, directional verbs (toward/away from signer or viewer), repeated beats.
+3. Facial expressions & non-manual markers (critical in ISL/ASL grammar): raised eyebrows (yes/no question), furrowed eyebrows (WH-question: what/where/when/who/why/how), head nod (affirmative), head shake (negative), smile, concern, lip/mouthing cues.
+4. Upper-body & spatial anchors: forehead/temple, eyes, chin/mouth, chest/heart, shoulder, neutral signing space.
+
+Output rules:
+- status = "idle": No intentional signing (blank camera, resting hands, adjusting hair/glasses, accidental fidgeting, static background). Do not emit any phrase.
+- status = "clarify": The signer is visibly trying to sign, but the gesture is motion-blurred, partially cropped/out of frame, occluded, too fast/incomplete, or genuinely ambiguous (confidence < 0.65). NEVER guess an unrelated or random word! Set clarificationPrompt to one brief, friendly sentence asking them what to adjust (e.g., "I couldn't catch that clearly—please keep both hands and your face in frame and sign slightly slower.").
+- status = "recognized": Clear intentional sign, multi-word phrase, or full conversational sentence (confidence >= 0.65). Provide:
+  - gloss: UPPERCASE gloss sequence (e.g. "NAMASTE HOW YOU", "I NEED WATER PLEASE", "WHAT TIME MEETING")
+  - sentence: natural, grammatically complete spoken English (e.g. "Hello, how are you?", "I need some water, please.", "What time is the meeting?")
+  - nonManual: concise description of facial/head/body cues observed (or "neutral")
+  - confidence: number between 0.0 and 1.0`,
           });
 
           const parsed = await callGeminiJson(parts, {
@@ -1040,47 +1061,91 @@ async function startServer() {
             responseSchema: {
               type: Type.OBJECT,
               properties: {
-                hasSign: { type: Type.BOOLEAN },
+                status: { type: Type.STRING, enum: ["recognized", "clarify", "idle"] },
                 gloss: { type: Type.STRING },
                 sentence: { type: Type.STRING },
+                nonManual: { type: Type.STRING },
+                clarificationPrompt: { type: Type.STRING },
                 confidence: { type: Type.NUMBER },
               },
-              required: ["hasSign", "gloss", "sentence", "confidence"],
+              required: ["status", "confidence"],
             },
           });
 
+          const status = String(parsed?.status || "idle").toLowerCase();
           const conf = Number(parsed?.confidence ?? 0);
+          const cleanSentence = String(parsed?.sentence || "").trim();
+          const cleanGloss = String(parsed?.gloss || "").trim().toUpperCase();
+
           if (
-            parsed?.hasSign &&
-            conf >= 0.68 &&
-            parsed?.gloss &&
-            parsed?.sentence &&
-            String(parsed.gloss).toUpperCase() !== "NONE"
+            status === "recognized" &&
+            conf >= 0.65 &&
+            cleanSentence &&
+            cleanGloss !== "NONE"
           ) {
-            recognizedGloss = String(parsed.gloss).trim().toUpperCase();
-            visionSentence = String(parsed.sentence).trim();
-            visionConfidence = conf;
-            visionModel = "vakhya-gemini-vision-3dcnn";
-          } else if (localHintGloss) {
-            recognizedGloss = localHintGloss;
-          } else {
+            const audioWavBase64 = await synthesizeGeminiSpeechWav(cleanSentence, voicePreset);
+            return res.json({
+              recognized: true,
+              needsClarification: false,
+              status: "recognized",
+              gloss: cleanGloss || "SIGN",
+              sentence: cleanSentence,
+              nonManual: String(parsed?.nonManual || "neutral"),
+              confidence: conf,
+              model: "vakhya-open-vocab-gemini-vision",
+              audioWavBase64,
+            });
+          }
+
+          if (status === "clarify") {
             return res.json({
               recognized: false,
+              needsClarification: true,
+              status: "clarify",
+              clarificationPrompt:
+                String(parsed?.clarificationPrompt || "").trim() ||
+                "That sign was a little unclear. Could you repeat it slightly slower with both hands and your face visible?",
               gloss: "",
               sentence: "",
               confidence: conf,
-              model: "vakhya-gemini-vision",
+              model: "vakhya-open-vocab-gemini-vision",
+              audioWavBase64: null,
             });
           }
+
+          return res.json({
+            recognized: false,
+            needsClarification: false,
+            status: "idle",
+            gloss: "",
+            sentence: "",
+            confidence: conf,
+            model: "vakhya-open-vocab-gemini-vision",
+            audioWavBase64: null,
+          });
         } catch (err: any) {
-          console.log("[VAKHYA S2V] Fallback to pose classifier:", err?.message || "timeout");
-          if (localHintGloss) {
-            recognizedGloss = localHintGloss;
-          }
+          console.log("[VAKHYA S2V] Open-vocab vision transient error:", err?.message || "timeout");
+          return res.json({
+            recognized: false,
+            needsClarification: true,
+            status: "clarify",
+            clarificationPrompt:
+              "Sign recognition timed out briefly. Please sign that again clearly.",
+            gloss: "",
+            sentence: "",
+            confidence: 0,
+            model: "vakhya-open-vocab-gemini-vision",
+            audioWavBase64: null,
+          });
         }
-      } else if (!recognizedGloss && localHintGloss) {
-        recognizedGloss = localHintGloss;
       }
+
+      // Secondary / Non-camera pose-only or explicit gloss_hint path (preset tests & offline fallback)
+      const hintMatch = String(hand_summary || "").match(/localHint=([A-Z_]+)/);
+      const localHintGloss = hintMatch ? hintMatch[1] : undefined;
+      let recognizedGloss: string | undefined = gloss_hint
+        ? String(gloss_hint).toUpperCase()
+        : localHintGloss;
 
       if (pythonAvailable) {
         try {
@@ -1091,11 +1156,18 @@ async function startServer() {
             speed: Number(speed),
           });
           const resolvedGloss = recognizedGloss || s2v.recognized_gloss || "HELLO";
+          const pyMatchedGloss =
+            !recognizedGloss ||
+            String(s2v.recognized_gloss || "").toUpperCase() === recognizedGloss;
+          const fallbackReadable = recognizedGloss
+            ? (() => {
+                const r = recognizedGloss.replace(/_/g, " ").toLowerCase();
+                return r.charAt(0).toUpperCase() + r.slice(1) + ".";
+              })()
+            : "";
           const resolvedSentence =
-            visionSentence ||
             (recognizedGloss && PHRASE_MAP[recognizedGloss]) ||
-            s2v.text ||
-            s2v.recognized_gloss ||
+            (pyMatchedGloss ? s2v.text || s2v.recognized_gloss : fallbackReadable) ||
             "Hello";
           const realPyAudio =
             s2v.audio?.engine === "espeak-ng" ? s2v.audio?.audio_wav_base64 || null : null;
@@ -1105,48 +1177,18 @@ async function startServer() {
             null;
           return res.json({
             recognized: true,
+            needsClarification: false,
+            status: "recognized",
             gloss: resolvedGloss,
             sentence: resolvedSentence,
-            confidence: visionConfidence ?? s2v.confidence ?? 0.85,
-            model: visionModel || s2v.model || "vakhya-3dcnn-spatiotemporal",
+            confidence: s2v.confidence ?? 0.85,
+            model: s2v.model || "vakhya-3dcnn-spatiotemporal",
             audioWavBase64,
             non_manual_markers: s2v.non_manual_markers || {},
             latency: s2v.latency || null,
           });
         } catch {
           // fall through to TS response
-        }
-      }
-
-      if (visionSentence) {
-        const audioWavBase64 = await synthesizeGeminiSpeechWav(visionSentence, voicePreset);
-        return res.json({
-          recognized: true,
-          gloss: recognizedGloss || "SIGN",
-          sentence: visionSentence,
-          confidence: visionConfidence ?? 0.9,
-          model: visionModel || "vakhya-gemini-vision",
-          audioWavBase64,
-        });
-      }
-
-      if (!recognizedGloss && Array.isArray(pose_sequence) && pose_sequence.length >= 3) {
-        const avgRightY =
-          pose_sequence.reduce((acc: number, f: any) => acc + (f?.right_wrist?.[1] ?? 0.6), 0) /
-          pose_sequence.length;
-        const avgRightOpen =
-          pose_sequence.reduce((acc: number, f: any) => acc + (f?.right_open ?? 0.4), 0) /
-          pose_sequence.length;
-        const dxSpan =
-          Math.max(...pose_sequence.map((f: any) => f?.right_wrist?.[0] ?? 0.65)) -
-          Math.min(...pose_sequence.map((f: any) => f?.right_wrist?.[0] ?? 0.65));
-
-        if (avgRightOpen >= 0.7 && (avgRightY < 0.5 || dxSpan > 0.08)) {
-          recognizedGloss = "HELLO";
-        } else if (avgRightOpen >= 0.7) {
-          recognizedGloss = "STOP";
-        } else if (avgRightOpen <= 0.25 && dxSpan > 0.04) {
-          recognizedGloss = "YES";
         }
       }
 
@@ -1160,6 +1202,8 @@ async function startServer() {
         const audioWavBase64 = await synthesizeGeminiSpeechWav(readable, voicePreset);
         return res.json({
           recognized: true,
+          needsClarification: false,
+          status: "recognized",
           gloss: recognizedGloss,
           sentence: readable,
           confidence: 0.82,
@@ -1167,8 +1211,14 @@ async function startServer() {
           audioWavBase64,
         });
       }
+
       return res.json({
         recognized: false,
+        needsClarification: hasCameraFrames,
+        status: hasCameraFrames ? "clarify" : "idle",
+        clarificationPrompt: hasCameraFrames
+          ? "Could you repeat that sign clearly with both hands visible?"
+          : "",
         gloss: "",
         sentence: "",
         confidence: 0,
