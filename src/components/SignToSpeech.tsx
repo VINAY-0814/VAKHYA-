@@ -14,6 +14,7 @@ import {
   PoseKeyframe,
   WebcamSignTracker,
 } from "../services/webcamSignTracker";
+import { playWavOrSpeech, unlockAudioPlayback } from "../services/ttsPlayer";
 
 interface SignToSpeechProps {
   profile: UserProfile;
@@ -39,7 +40,6 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationRef = useRef<number | null>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
   const isCameraActiveRef = useRef(false);
   const trackerRef = useRef<WebcamSignTracker | null>(null);
   const poseBufferRef = useRef<PoseKeyframe[]>([]);
@@ -240,60 +240,19 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
   };
 
   const playTranslatedAudio = (text: string, audioWavBase64?: string | null) => {
-    if (audioWavBase64) {
-      const clean = String(audioWavBase64).replace(/^data:audio\/[\w+;=-]+;base64,/, "");
-      if (clean) {
-        const audio = new Audio(`data:audio/wav;base64,${clean}`);
-        audio.play().catch(() => {
-          triggerVoiceSynthesizer(text);
-        });
-        return;
-      }
-    }
-    triggerVoiceSynthesizer(text);
+    unlockAudioPlayback();
+    void playWavOrSpeech(text, {
+      audioWavBase64,
+      fetchIfMissing: true,
+      voiceName: profile.voiceSettings.voiceName,
+      pitch: profile.voiceSettings.pitch,
+      speed: profile.voiceSettings.speed,
+    });
   };
 
-  // Trigger browser Audio Context Text-To-Speech with voice presets modulation
+  // Trigger Gemini TTS WAV with browser Web Speech fallback
   const triggerVoiceSynthesizer = (text: string) => {
-    if (!window.speechSynthesis) {
-      fetch("/api/translate/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, voiceSettings: profile.voiceSettings }),
-      })
-        .then((r) => r.json())
-        .then((d) => {
-          if (d.audioWavBase64) {
-            const audio = new Audio(`data:audio/wav;base64,${d.audioWavBase64}`);
-            audio.play().catch(() => {});
-          }
-        })
-        .catch(() => {});
-      return;
-    }
-
-    // Stop current synthesis
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    // Apply Vakhya pitch, speed, and accent tokens
-    utterance.pitch = profile.voiceSettings.pitch;
-    utterance.rate = profile.voiceSettings.speed;
-
-    // Try to match a clean localized voice preset
-    const voices = window.speechSynthesis.getVoices();
-    const desiredName = profile.voiceSettings.voiceName.toLowerCase();
-    const matchedVoice = voices.find((v) => v.name.toLowerCase().includes(desiredName));
-    if (matchedVoice) {
-      utterance.voice = matchedVoice;
-    }
-
-    // High quality Web Audio visualizer flash effect
-    if (!audioCtxRef.current) {
-      audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-
-    window.speechSynthesis.speak(utterance);
+    playTranslatedAudio(text, null);
   };
 
   const handleSelectPrebuilt = (gloss: string) => {

@@ -9,6 +9,7 @@ import { Mic, MicOff, Send, HelpCircle, Sliders, Volume2, Accessibility, ShieldC
 import { UserProfile, SignLanguage } from "../types";
 import { theme } from "../theme";
 import { MediaPipeAvatar } from "./MediaPipeAvatar";
+import { playWavOrSpeech, unlockAudioPlayback } from "../services/ttsPlayer";
 
 interface SpeechToSignProps {
   profile: UserProfile;
@@ -818,8 +819,26 @@ export default function SpeechToSign({ profile }: SpeechToSignProps) {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleTranslateSpeech();
                 }}
-                className={`w-full h-12 px-4 rounded-xl text-sm font-medium ${theme.styles.glassInput}`}
+                className={`w-full h-12 pl-4 pr-20 rounded-xl text-sm font-medium ${theme.styles.glassInput}`}
               />
+              <button
+                type="button"
+                onClick={() => {
+                  if (!inputText.trim()) return;
+                  unlockAudioPlayback();
+                  void playWavOrSpeech(inputText.trim(), {
+                    fetchIfMissing: true,
+                    voiceName: profile.voiceSettings?.voiceName,
+                    pitch: profile.voiceSettings?.pitch,
+                    speed: profile.voiceSettings?.speed,
+                  });
+                }}
+                disabled={!inputText.trim()}
+                title="Read phrase aloud"
+                className="absolute right-11 top-2 h-8 w-8 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/25 rounded-lg flex items-center justify-center text-purple-500 dark:text-purple-300 disabled:opacity-40 transition-all cursor-pointer"
+              >
+                <Volume2 className="w-4 h-4" />
+              </button>
               <button
                 id="text-phrase-send-btn"
                 onClick={() => handleTranslateSpeech()}

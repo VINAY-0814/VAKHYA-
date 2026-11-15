@@ -28,6 +28,11 @@ import {
   PoseKeyframe,
   WebcamSignTracker,
 } from "../../services/webcamSignTracker";
+import {
+  fetchTtsWav,
+  playWavOrSpeech,
+  unlockAudioPlayback,
+} from "../../services/ttsPlayer";
 
 interface InCallScreenProps {
   remoteUser: {
@@ -265,41 +270,16 @@ export default function InCallScreen({
     return bytes.buffer;
   };
 
-  const playWavAudio = async (audioWavBase64?: string | null): Promise<boolean> => {
-    if (!audioWavBase64) return false;
-    const cleanB64 = String(audioWavBase64).replace(/^data:audio\/[\w+;=-]+;base64,/, "");
-    if (!cleanB64) return false;
-
-    try {
-      const audio = new Audio(`data:audio/wav;base64,${cleanB64}`);
-      await audio.play();
-      return true;
-    } catch {
-      // Fallback to AudioContext playback if <audio> element was blocked
-    }
-
-    const ctx = audioCtxRef.current;
-    if (ctx) {
-      try {
-        if (ctx.state === "suspended") await ctx.resume();
-        const audioBuffer = await ctx.decodeAudioData(decodeBase64ToArrayBuffer(cleanB64));
-        const src = ctx.createBufferSource();
-        src.buffer = audioBuffer;
-        src.connect(ctx.destination);
-        src.start();
-        return true;
-      } catch {
-        return false;
-      }
-    }
-    return false;
-  };
-
-  const speakTranslatedText = async (text: string, audioWavBase64?: string | null) => {
+  const speakTranslatedText = async (
+    text: string,
+    audioWavBase64?: string | null,
+    forceSpeak = false
+  ) => {
     const clean = text.trim();
     if (!clean) return;
     const now = Date.now();
     if (
+      !forceSpeak &&
       lastSpokenRef.current.text.toLowerCase() === clean.toLowerCase() &&
       now - lastSpokenRef.current.ts < 3500
     ) {
@@ -307,32 +287,13 @@ export default function InCallScreen({
     }
     lastSpokenRef.current = { text: clean, ts: now };
 
-    if (audioWavBase64) {
-      const played = await playWavAudio(audioWavBase64);
-      if (played) return;
-    }
-
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      try {
-        window.speechSynthesis.resume();
-      } catch {}
-      const voices = window.speechSynthesis.getVoices();
-      if (voices.length > 0 || "onvoiceschanged" in window.speechSynthesis) {
-        if (window.speechSynthesis.pending && window.speechSynthesis.speaking) {
-          window.speechSynthesis.cancel();
-        }
-        const utterance = new SpeechSynthesisUtterance(clean);
-        utterance.pitch = localUser?.voiceSettings?.pitch || 1.0;
-        utterance.rate = localUser?.voiceSettings?.speed || 1.0;
-        const matched = voices.find((v) =>
-          selectedVoicePreset.toLowerCase().includes("female")
-            ? /female|zira|samantha|aria|victoria|google us english/i.test(v.name)
-            : /male|david|mark|alex|daniel/i.test(v.name)
-        );
-        if (matched) utterance.voice = matched;
-        window.speechSynthesis.speak(utterance);
-      }
-    }
+    await playWavOrSpeech(clean, {
+      audioWavBase64,
+      fetchIfMissing: true,
+      voiceName: selectedVoicePreset,
+      pitch: localUser?.voiceSettings?.pitch || 1.0,
+      speed: localUser?.voiceSettings?.speed || 1.0,
+    });
   };
 
   const ensureAudioMixer = async (): Promise<{
@@ -502,10 +463,11 @@ export default function InCallScreen({
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Send a typed phrase as both Voice + Sign to the remote caller
+  // Send a typed phrase as both Voice + Sign to the remote caller and read aloud on both sides
   const handleSendQuickPhrase = async (phraseText: string) => {
     const clean = phraseText.trim();
     if (!clean) return;
+    unlockAudioPlayback();
     setQuickText("");
     setOutgoingCaption(`You: "${clean}"`);
 
@@ -513,7 +475,13 @@ export default function InCallScreen({
     let markers: any = { eyebrows: clean.includes("?") ? "up" : "neutral", mouth: "idle" };
     let pose_sequence: PoseKeyframe[] = [];
 
-    const [s2gResult, audioOut] = await Promise.all([
+    const ttsOpts = {
+      voiceName: selectedVoicePreset,
+      pitch: localUser?.voiceSettings?.pitch || 1.0,
+      speed: localUser?.voiceSettings?.speed || 1.0,
+    };
+
+    const [s2gResult, wavBase64] = await Promise.all([
       fetch("/api/translate/sentence-to-gloss", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -521,7 +489,7 @@ export default function InCallScreen({
       })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null),
-      injectAndPlayTtsAudio(clean, null, selectedVoicePreset),
+      fetchTtsWav(clean, ttsOpts),
     ]);
 
     if (s2gResult) {
@@ -529,6 +497,13 @@ export default function InCallScreen({
       markers = s2gResult.markers || markers;
       pose_sequence = s2gResult.pose_sequence || [];
     }
+
+    // Play cleanly on sender side without breaking or clipping live WebRTC mic track
+    void playWavOrSpeech(clean, {
+      ...ttsOpts,
+      audioWavBase64: wavBase64,
+      fetchIfMissing: true,
+    });
 
     realtimeClient.send({
       type: "translation_event",
@@ -547,10 +522,12 @@ export default function InCallScreen({
       roomName: activeRoomName,
       payload: {
         direction: "sign_to_voice",
+        source: "quick_text",
         gloss: glosses,
         subtitle: clean,
-        audioWavBase64: audioOut.audioWavBase64,
-        streamedViaWebRtc: audioOut.streamedViaWebRtc,
+        audioWavBase64: wavBase64,
+        streamedViaWebRtc: false,
+        forceSpeak: true,
       },
     });
   };
@@ -812,8 +789,8 @@ export default function InCallScreen({
             until: Date.now() + Math.max(3600, frames.length * 120),
           };
         } else if (direction === "sign_to_voice" && subtitle) {
-          if (!msg.payload.streamedViaWebRtc) {
-            void speakTranslatedText(subtitle, audioWavBase64);
+          if (msg.payload.forceSpeak || !msg.payload.streamedViaWebRtc) {
+            void speakTranslatedText(subtitle, audioWavBase64, Boolean(msg.payload.forceSpeak));
           }
         }
       }
@@ -1546,6 +1523,7 @@ export default function InCallScreen({
       ref={containerRef}
       id="incall-screen-wrapper"
       onPointerDown={() => {
+        unlockAudioPlayback();
         if (audioCtxRef.current?.state === "suspended") {
           audioCtxRef.current.resume().catch(() => {});
         }
@@ -1765,11 +1743,22 @@ export default function InCallScreen({
                       <span className="font-medium text-[#22F3A6]">
                         {captionSpeaker || remoteUser.name}
                       </span>
-                      {activeGloss && (
-                        <span className="text-[#C0AAFF] font-mono text-[10px] truncate">
-                          {activeGloss}
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2 min-w-0">
+                        {activeGloss && (
+                          <span className="text-[#C0AAFF] font-mono text-[10px] truncate">
+                            {activeGloss}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => void speakTranslatedText(activeSubtitle, null, true)}
+                          className="p-1 rounded-md bg-white/10 hover:bg-[#22F3A6]/20 text-slate-200 hover:text-[#22F3A6] transition-colors cursor-pointer shrink-0"
+                          title="Read incoming text aloud"
+                          aria-label="Read incoming text aloud"
+                        >
+                          <Volume2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                     <p className="text-sm text-white font-medium leading-snug">
                       {activeSubtitle}
@@ -1782,9 +1771,24 @@ export default function InCallScreen({
                 )}
 
                 {outgoingCaption && (
-                  <p className="text-xs text-[#22F3A6]/90 pt-1 border-t border-white/10 truncate">
-                    {outgoingCaption}
-                  </p>
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/10">
+                    <p className="text-xs text-[#22F3A6]/90 truncate">
+                      {outgoingCaption}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const match = outgoingCaption.match(/"([^"]+)"$/);
+                        const spoken = match ? match[1] : outgoingCaption;
+                        void speakTranslatedText(spoken, null, true);
+                      }}
+                      className="p-1 rounded-md bg-white/10 hover:bg-[#22F3A6]/20 text-[#22F3A6] transition-colors cursor-pointer shrink-0"
+                      title="Read your text aloud"
+                      aria-label="Read your text aloud"
+                    >
+                      <Volume2 className="w-3 h-3" />
+                    </button>
+                  </div>
                 )}
               </div>
             </motion.div>

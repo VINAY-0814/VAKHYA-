@@ -61,6 +61,7 @@ import ProfileSettings from "./ProfileSettings";
 import Profile from "./Profile";
 import CallDashboard from "./calls/CallDashboard";
 import { realtimeClient } from "../services/realtimeClient";
+import { fetchTtsWav, playWavOrSpeech, unlockAudioPlayback } from "../services/ttsPlayer";
 
 interface DashboardProps {
   profile: UserProfile;
@@ -126,6 +127,13 @@ export default function Dashboard({ profile, onLogout }: DashboardProps) {
   const [voicePreset, setVoicePreset] = useState<string>(
     currentUserProfile.voiceSettings?.voiceName || "Warm Male"
   );
+  const [autoReadChat, setAutoReadChat] = useState<boolean>(true);
+  const autoReadChatRef = React.useRef(autoReadChat);
+  autoReadChatRef.current = autoReadChat;
+  const voicePresetRef = React.useRef(voicePreset);
+  voicePresetRef.current = voicePreset;
+  const voiceSettingsRef = React.useRef(currentUserProfile.voiceSettings);
+  voiceSettingsRef.current = currentUserProfile.voiceSettings;
 
   // Chat message timelines (persisted locally + live WebSocket DMs)
   const [messages, setMessages] = useState<Record<string, any[]>>(() => {
@@ -385,6 +393,15 @@ export default function Dashboard({ profile, onLogout }: DashboardProps) {
             },
           ],
         }));
+        if (msg.payload.speakAloud !== false && (msg.payload.speakAloud || autoReadChatRef.current)) {
+          void playWavOrSpeech(msg.payload.text, {
+            audioWavBase64: msg.payload.audioWavBase64 || null,
+            fetchIfMissing: true,
+            voiceName: msg.payload.voiceSettings?.voiceName || voicePresetRef.current,
+            pitch: msg.payload.voiceSettings?.pitch || voiceSettingsRef.current?.pitch || 1.0,
+            speed: msg.payload.voiceSettings?.speed || voiceSettingsRef.current?.speed || 1.0,
+          });
+        }
       }
     });
 
@@ -452,29 +469,58 @@ export default function Dashboard({ profile, onLogout }: DashboardProps) {
     handleInitiateCall(contact, "video");
   };
 
-  // Real chat DM send via WebSocket signaling (no fake 3s bot auto-reply)
-  const handleSendMessage = (contactId: string, text: string) => {
+  // Real chat DM send via WebSocket signaling with synchronized TTS read-out on both users' sides
+  const handleSendMessage = (contactId: string, text: string, options?: { speakAloud?: boolean }) => {
+    const clean = text.trim();
+    if (!clean) return;
+    unlockAudioPlayback();
+
     const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    const userMsg = { id: Date.now(), sender: "me", text, time: timeStr };
+    const userMsg = { id: Date.now(), sender: "me", text: clean, time: timeStr };
 
     setMessages((prev) => ({
       ...prev,
       [contactId]: [...(prev[contactId] || []), userMsg],
     }));
 
+    const shouldSpeak = options?.speakAloud ?? autoReadChatRef.current;
+    const ttsOpts = {
+      voiceName: voicePresetRef.current,
+      pitch: voiceSettingsRef.current?.pitch || 1.0,
+      speed: voiceSettingsRef.current?.speed || 1.0,
+    };
+
     const targetContact = mergedContacts.find((c) => c.id === contactId);
-    if (targetContact) {
-      realtimeClient.send({
-        type: "chat_dm",
-        targetIdentity: targetContact.identity,
-        targetPhone: targetContact.phone,
-        payload: {
-          text,
-          senderPhone: currentUserProfile.phone,
-          signed: currentUserProfile.userType === UserType.DEAF_OR_HARD_OF_HEARING,
-        },
-      });
-    }
+    void (async () => {
+      let wavBase64: string | null = null;
+      if (shouldSpeak) {
+        wavBase64 = await Promise.race([
+          fetchTtsWav(clean, ttsOpts),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500)),
+        ]);
+        void playWavOrSpeech(clean, {
+          ...ttsOpts,
+          audioWavBase64: wavBase64,
+          fetchIfMissing: true,
+        });
+      }
+
+      if (targetContact) {
+        realtimeClient.send({
+          type: "chat_dm",
+          targetIdentity: targetContact.identity,
+          targetPhone: targetContact.phone,
+          payload: {
+            text: clean,
+            senderPhone: currentUserProfile.phone,
+            signed: currentUserProfile.userType === UserType.DEAF_OR_HARD_OF_HEARING,
+            speakAloud: shouldSpeak,
+            audioWavBase64: wavBase64,
+            voiceSettings: ttsOpts,
+          },
+        });
+      }
+    })();
   };
 
   const handleClearChat = (contactId: string) => {
@@ -727,6 +773,11 @@ export default function Dashboard({ profile, onLogout }: DashboardProps) {
                 selectedVoicePreset={voicePreset}
                 pitch={currentUserProfile.voiceSettings?.pitch || 1.0}
                 speed={currentUserProfile.voiceSettings?.speed || 1.0}
+                autoReadChat={autoReadChat}
+                onToggleAutoReadChat={() => {
+                  unlockAudioPlayback();
+                  setAutoReadChat((prev) => !prev);
+                }}
               />
             )}
 

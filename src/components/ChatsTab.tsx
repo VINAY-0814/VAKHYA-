@@ -27,16 +27,19 @@ import {
   MoreVertical
 } from "lucide-react";
 import { theme } from "../theme";
+import { playWavOrSpeech, unlockAudioPlayback } from "../services/ttsPlayer";
 
 interface ChatsTabProps {
   contacts: any[];
   messages: Record<string, any[]>;
-  onSendMessage: (contactId: string, text: string) => void;
+  onSendMessage: (contactId: string, text: string, options?: { speakAloud?: boolean }) => void;
   onClearChat?: (contactId: string) => void;
   onInitiateCall: (contact: any, callType: "voice" | "video") => void;
   selectedVoicePreset: string;
   pitch: number;
   speed: number;
+  autoReadChat?: boolean;
+  onToggleAutoReadChat?: () => void;
 }
 
 export default function ChatsTab({
@@ -47,7 +50,9 @@ export default function ChatsTab({
   onInitiateCall,
   selectedVoicePreset,
   pitch,
-  speed
+  speed,
+  autoReadChat = true,
+  onToggleAutoReadChat
 }: ChatsTabProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
@@ -203,36 +208,31 @@ export default function ChatsTab({
     };
   }, [activeStoryContact, autoSign, storyProgress, storyPoses, storyGlosses]);
 
+  const speakMessageLocally = (text: string) => {
+    const clean = text.trim();
+    if (!clean) return;
+    unlockAudioPlayback();
+    void playWavOrSpeech(clean, {
+      fetchIfMissing: true,
+      voiceName: selectedVoicePreset,
+      pitch,
+      speed,
+    });
+  };
+
   const handleSendText = () => {
     if (!newMessageText.trim() || !activeChatId) return;
+    unlockAudioPlayback();
     onSendMessage(activeChatId, newMessageText.trim());
     setNewMessageText("");
   };
 
-  // Speaks typed text out-loud using custom voice parameters
+  // Speaks typed text out-loud on both sender & receiver using Gemini TTS + Web Speech fallback
   const handleVoiceSpeakout = () => {
-    if (!newMessageText.trim()) return;
-    if (!window.speechSynthesis) return;
-
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(newMessageText.trim());
-    
-    // Choose voice preset category
-    const voices = window.speechSynthesis.getVoices();
-    let selectedVoice = voices.find((v) =>
-      selectedVoicePreset.includes("Female")
-        ? v.name.includes("Female") || v.name.includes("Zira")
-        : v.name.includes("Male") || v.name.includes("David")
-    );
-
-    if (selectedVoice) utterance.voice = selectedVoice;
-    utterance.pitch = pitch;
-    utterance.rate = speed;
-
-    window.speechSynthesis.speak(utterance);
-
-    // Also send text to the message feed
-    handleSendText();
+    if (!newMessageText.trim() || !activeChatId) return;
+    unlockAudioPlayback();
+    onSendMessage(activeChatId, newMessageText.trim(), { speakAloud: true });
+    setNewMessageText("");
   };
 
   const handleDeleteChat = (contactId: string, e: React.MouseEvent) => {
@@ -449,6 +449,21 @@ export default function ChatsTab({
               </div>
 
               <div className="flex items-center gap-2">
+                {onToggleAutoReadChat && (
+                  <button
+                    type="button"
+                    onClick={onToggleAutoReadChat}
+                    className={`px-2.5 h-9 rounded-xl flex items-center gap-1.5 text-[11px] font-semibold border transition-colors cursor-pointer ${
+                      autoReadChat
+                        ? "bg-emerald-500/15 border-emerald-500/35 text-emerald-500 dark:text-emerald-300"
+                        : `${theme.styles.buttonGlass} text-[var(--text-secondary)]`
+                    }`}
+                    title={autoReadChat ? "Auto-read text messages is ON for both users" : "Auto-read text messages is OFF"}
+                  >
+                    {autoReadChat ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+                    <span className="hidden sm:inline">{autoReadChat ? "Read On" : "Read Off"}</span>
+                  </button>
+                )}
                 <button
                   onClick={() => onInitiateCall(activeChatContact, "voice")}
                   className={`w-9 h-9 rounded-xl flex items-center justify-center ${theme.styles.buttonGlass}`}
@@ -500,7 +515,22 @@ export default function ChatsTab({
                             ★ Translated Sign Language Gloss
                           </span>
                         )}
-                        <p className="leading-relaxed font-sans">{msg.text}</p>
+                        <div className="flex items-start justify-between gap-2.5">
+                          <p className="leading-relaxed font-sans">{msg.text}</p>
+                          <button
+                            type="button"
+                            onClick={() => speakMessageLocally(msg.text)}
+                            className={`p-1 rounded-md shrink-0 transition-colors cursor-pointer ${
+                              isMe
+                                ? "bg-white/15 hover:bg-white/25 text-white"
+                                : "bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-300"
+                            }`}
+                            title="Read message aloud"
+                            aria-label="Read message aloud"
+                          >
+                            <Volume2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
                       <span className={`text-[8px] font-mono text-[var(--text-secondary)]/60 block ${isMe ? "text-right" : "text-left"}`}>
                         {msg.time}
@@ -664,6 +694,14 @@ export default function ChatsTab({
                 </span>
 
                 <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => speakMessageLocally(activeStoryContact.storyContent || "")}
+                    className="py-1 px-2.5 rounded-lg text-[9px] font-bold border bg-emerald-500/20 border-emerald-500/40 text-emerald-300 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Volume2 className="w-3 h-3" />
+                    Read
+                  </button>
                   <button
                     onClick={() => setAutoCaption(!autoCaption)}
                     className={`py-1 px-2.5 rounded-lg text-[9px] font-bold border transition-colors ${
