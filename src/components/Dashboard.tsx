@@ -423,6 +423,7 @@ export default function Dashboard({ profile, onLogout }: DashboardProps) {
 
   // Real call initiation via WebSocket signaling (no fake 2.5s auto-connect)
   const handleInitiateCall = (contact: any, type: "voice" | "video") => {
+    unlockAudioPlayback();
     const room = `vakhya_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     if (outgoingTimeoutRef.current) clearTimeout(outgoingTimeoutRef.current);
 
@@ -1248,6 +1249,7 @@ export default function Dashboard({ profile, onLogout }: DashboardProps) {
           setCallState("idle");
         }}
         onAcceptCall={() => {
+          unlockAudioPlayback();
           callStartTimeRef.current = Date.now();
           realtimeClient.send({
             type: "call_accept",

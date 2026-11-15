@@ -190,8 +190,10 @@ export default function InCallScreen({
   // Clean live translation & connection states
   const [activeGloss, setActiveGloss] = useState("");
   const [activeSubtitle, setActiveSubtitle] = useState("");
+  const [recentCaptions, setRecentCaptions] = useState<Array<{ id: number; speaker: string; text: string; gloss?: string }>>([]);
   const [captionSpeaker, setCaptionSpeaker] = useState("");
   const [outgoingCaption, setOutgoingCaption] = useState("");
+  const [lastRecognizedSign, setLastRecognizedSign] = useState("");
   const [handDetected, setHandDetected] = useState(false);
   const [isTranslatingSign, setIsTranslatingSign] = useState(false);
   const [hasIncomingSignPose, setHasIncomingSignPose] = useState(false);
@@ -216,8 +218,6 @@ export default function InCallScreen({
   const txAudioDestRef = useRef<MediaStreamAudioDestinationNode | null>(null);
   const micGainRef = useRef<GainNode | null>(null);
   const micSourceConnectedRef = useRef<boolean>(false);
-  const ttsPlaybackUntilRef = useRef<number>(0);
-  const ttsPlayGenerationRef = useRef<number>(0);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const remoteIdentityRef = useRef<string>(remoteUser.identity || "");
   const peerInRoomRef = useRef<boolean>(false);
@@ -230,11 +230,13 @@ export default function InCallScreen({
   const poseBufferRef = useRef<PoseKeyframe[]>([]);
   const frameSnapsRef = useRef<string[]>([]);
   const handSummaryRef = useRef<string>("");
+  const localSignVotesRef = useRef<string[]>([]);
   const peakMotionRef = useRef<number>(0);
   const quietFramesAfterMotionRef = useRef<number>(0);
   const lastPoseInferRef = useRef<number>(0);
   const lastSentSignRef = useRef<{ sentence: string; ts: number }>({ sentence: "", ts: 0 });
   const lastSpokenRef = useRef<{ text: string; ts: number }>({ text: "", ts: 0 });
+  const pendingSpeechRef = useRef<{ text: string; audioWavBase64?: string | null } | null>(null);
   const isInferringPoseRef = useRef(false);
   const remotePoseQueueRef = useRef<{
     frames: PoseKeyframe[];
@@ -259,16 +261,10 @@ export default function InCallScreen({
   isFrontCameraRef.current = isFrontCamera;
   const showHandOverlayRef = useRef(showHandOverlay);
   showHandOverlayRef.current = showHandOverlay;
-
-  const decodeBase64ToArrayBuffer = (base64: string): ArrayBuffer => {
-    const cleanB64 = String(base64).replace(/^data:audio\/[\w+;=-]+;base64,/, "");
-    const binary = window.atob(cleanB64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes.buffer;
-  };
+  const selectedVoicePresetRef = useRef(selectedVoicePreset);
+  selectedVoicePresetRef.current = selectedVoicePreset;
+  const voiceSettingsRef = useRef(localUser?.voiceSettings);
+  voiceSettingsRef.current = localUser?.voiceSettings;
 
   const speakTranslatedText = async (
     text: string,
@@ -287,13 +283,19 @@ export default function InCallScreen({
     }
     lastSpokenRef.current = { text: clean, ts: now };
 
-    await playWavOrSpeech(clean, {
+    const { played, audioWavBase64: resolvedWav } = await playWavOrSpeech(clean, {
       audioWavBase64,
       fetchIfMissing: true,
-      voiceName: selectedVoicePreset,
-      pitch: localUser?.voiceSettings?.pitch || 1.0,
-      speed: localUser?.voiceSettings?.speed || 1.0,
+      voiceName: selectedVoicePresetRef.current,
+      pitch: voiceSettingsRef.current?.pitch || 1.0,
+      speed: voiceSettingsRef.current?.speed || 1.0,
     });
+    if (!played) {
+      pendingSpeechRef.current = { text: clean, audioWavBase64: resolvedWav || audioWavBase64 };
+      setRemoteAudioMutedByAutoplay(true);
+    } else if (pendingSpeechRef.current?.text === clean) {
+      pendingSpeechRef.current = null;
+    }
   };
 
   const ensureAudioMixer = async (): Promise<{
@@ -343,104 +345,6 @@ export default function InCallScreen({
       ctx,
       dest,
       mixedTrack: outgoingAudioTrackRef.current,
-    };
-  };
-
-  const injectAndPlayTtsAudio = async (
-    text: string,
-    initialWavBase64?: string | null,
-    voicePreset?: string
-  ): Promise<{ streamedViaWebRtc: boolean; audioWavBase64: string | null }> => {
-    const clean = text.trim();
-    if (!clean) return { streamedViaWebRtc: false, audioWavBase64: null };
-
-    let wavBase64 = initialWavBase64 || null;
-    if (!wavBase64) {
-      try {
-        const res = await fetch("/api/translate/tts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            text: clean,
-            voiceSettings: {
-              voiceName: voicePreset || selectedVoicePreset,
-              pitch: localUser?.voiceSettings?.pitch || 1.0,
-              speed: localUser?.voiceSettings?.speed || 1.0,
-            },
-          }),
-        });
-        if (res.ok) {
-          const ttsData = await res.json();
-          wavBase64 = ttsData.audioWavBase64 || null;
-        }
-      } catch {
-        // fallback handled below
-      }
-    }
-
-    const mixer = await ensureAudioMixer();
-    const pc = pcRef.current;
-    const isRtcConnected = Boolean(
-      pc &&
-        (pc.connectionState === "connected" ||
-          pc.iceConnectionState === "connected" ||
-          pc.iceConnectionState === "completed")
-    );
-
-    if (wavBase64 && mixer && mixer.ctx.state === "running") {
-      try {
-        const audioBuffer = await mixer.ctx.decodeAudioData(decodeBase64ToArrayBuffer(wavBase64));
-        const gen = ++ttsPlayGenerationRef.current;
-        const sender = audioSenderRef.current;
-        let swappedTrackForTts = false;
-
-        if (sender && mixer.mixedTrack && mixer.mixedTrack.readyState === "live") {
-          if (rawMicTrackRef.current && micGainRef.current) {
-            rawMicTrackRef.current.enabled = true;
-            micGainRef.current.gain.setTargetAtTime(
-              isMutedRef.current ? 0 : 1,
-              mixer.ctx.currentTime,
-              0.01
-            );
-          }
-          if (sender.track !== mixer.mixedTrack) {
-            await sender.replaceTrack(mixer.mixedTrack).catch(() => {});
-          }
-          swappedTrackForTts = sender.track === mixer.mixedTrack;
-        }
-
-        const nowAudio = mixer.ctx.currentTime;
-        const startAt = Math.max(nowAudio, ttsPlaybackUntilRef.current);
-        ttsPlaybackUntilRef.current = startAt + audioBuffer.duration + 0.05;
-
-        const source = mixer.ctx.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(mixer.ctx.destination);
-        source.connect(mixer.dest);
-        source.onended = () => {
-          if (ttsPlayGenerationRef.current !== gen) return;
-          const rawMic = rawMicTrackRef.current;
-          const currentSender = audioSenderRef.current;
-          if (rawMic && currentSender && currentSender.track !== rawMic) {
-            rawMic.enabled = !isMutedRef.current;
-            void currentSender.replaceTrack(rawMic).catch(() => {});
-          }
-        };
-        source.start(startAt);
-
-        return {
-          streamedViaWebRtc: Boolean(isRtcConnected && swappedTrackForTts),
-          audioWavBase64: wavBase64,
-        };
-      } catch {
-        // Fall through to element/SpeechSynthesis playback
-      }
-    }
-
-    void speakTranslatedText(clean, wavBase64);
-    return {
-      streamedViaWebRtc: false,
-      audioWavBase64: wavBase64,
     };
   };
 
@@ -766,10 +670,22 @@ export default function InCallScreen({
           return;
         }
 
+        const speakerLabel =
+          direction === "sign_to_voice" && msg.payload.source !== "quick_text"
+            ? `${remoteUser.name} (Signed)`
+            : remoteUser.name;
+
         if (gloss || glosses) setActiveGloss(gloss || glosses);
         if (subtitle) {
-          setCaptionSpeaker(remoteUser.name);
+          setCaptionSpeaker(speakerLabel);
           setActiveSubtitle(subtitle);
+          if (direction === "sign_to_voice") {
+            setRecentCaptions((prev) => {
+              const last = prev[prev.length - 1];
+              if (last && last.text === subtitle) return prev;
+              return [...prev.slice(-2), { id: Date.now(), speaker: speakerLabel, text: subtitle, gloss: gloss || glosses }];
+            });
+          }
         }
 
         if (direction === "voice_to_sign") {
@@ -1329,6 +1245,11 @@ export default function InCallScreen({
       isInferringPoseRef.current = true;
       setIsTranslatingSign(true);
       try {
+        const ttsOpts = {
+          voiceName: selectedVoicePresetRef.current,
+          pitch: voiceSettingsRef.current?.pitch || 1.0,
+          speed: voiceSettingsRef.current?.speed || 1.0,
+        };
         const res = await fetch("/api/translate/pose-to-voice", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1337,7 +1258,9 @@ export default function InCallScreen({
             frames_base64: framesBase64.slice(0, 3),
             hand_summary: handSummary,
             signLanguage: activeSignLanguage,
-            voicePreset: selectedVoicePreset,
+            voicePreset: ttsOpts.voiceName,
+            pitch: ttsOpts.pitch,
+            speed: ttsOpts.speed,
           }),
         });
         const data = await res.json();
@@ -1345,24 +1268,38 @@ export default function InCallScreen({
           const now = Date.now();
           const isDup =
             lastSentSignRef.current.sentence.toLowerCase() === String(data.sentence).toLowerCase() &&
-            now - lastSentSignRef.current.ts < 3500;
+            now - lastSentSignRef.current.ts < 3200;
           if (!isDup) {
             lastSentSignRef.current = { sentence: data.sentence, ts: now };
             setOutgoingCaption(`You signed (${data.gloss || "SIGN"}): "${data.sentence}"`);
-            const audioOut = await injectAndPlayTtsAudio(
-              data.sentence,
-              data.audioWavBase64 || null,
-              selectedVoicePreset
-            );
+            setLastRecognizedSign(data.sentence);
+            setTimeout(() => {
+              setLastRecognizedSign((prev) => (prev === data.sentence ? "" : prev));
+            }, 2600);
+
+            const wavBase64 =
+              data.audioWavBase64 ||
+              (await fetchTtsWav(data.sentence, ttsOpts));
+
+            // Play confirmation voice locally on signer without breaking WebRTC mic track
+            void playWavOrSpeech(data.sentence, {
+              ...ttsOpts,
+              audioWavBase64: wavBase64,
+              fetchIfMissing: true,
+            });
+
+            // Deliver both text + TTS voice reliably to the other user on the call
             realtimeClient.send({
               type: "translation_event",
               roomName: activeRoomName,
               payload: {
                 direction: "sign_to_voice",
+                source: "camera_sign",
                 gloss: data.gloss || "SIGNED",
                 subtitle: data.sentence,
-                audioWavBase64: audioOut.audioWavBase64,
-                streamedViaWebRtc: audioOut.streamedViaWebRtc,
+                audioWavBase64: wavBase64,
+                streamedViaWebRtc: false,
+                forceSpeak: true,
               },
             });
           }
@@ -1373,6 +1310,36 @@ export default function InCallScreen({
         isInferringPoseRef.current = false;
         setIsTranslatingSign(false);
       }
+    };
+
+    const flushSignBuffer = () => {
+      const snapshot = [...poseBufferRef.current];
+      const snaps = [...frameSnapsRef.current];
+      if (snaps.length < 3 && localVideoRef.current && trackerRef.current) {
+        const finalSnap = trackerRef.current.captureCompactFrame(
+          localVideoRef.current,
+          isFrontCameraRef.current
+        );
+        if (finalSnap) snaps.push(finalSnap);
+      }
+
+      const votes = localSignVotesRef.current;
+      let summary = handSummaryRef.current;
+      if (votes.length >= 3) {
+        const counts: Record<string, number> = {};
+        for (const v of votes) counts[v] = (counts[v] || 0) + 1;
+        const [topGloss, topCount] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0] || [];
+        if (topGloss && topCount >= 3 && peakMotionRef.current < 1.6) {
+          summary = `${summary}; localHint=${topGloss}; steadyHint=true`;
+        }
+      }
+
+      poseBufferRef.current = [];
+      frameSnapsRef.current = [];
+      localSignVotesRef.current = [];
+      peakMotionRef.current = 0;
+      quietFramesAfterMotionRef.current = 0;
+      void triggerInCallPoseToVoice(snapshot, snaps, summary);
     };
 
     const renderLoop = () => {
@@ -1412,6 +1379,10 @@ export default function InCallScreen({
             poseBufferRef.current.push(detection.poseFrame);
             if (poseBufferRef.current.length > 20) poseBufferRef.current.shift();
             handSummaryRef.current = detection.handSummary;
+            if (detection.detectedLocalSign?.gloss) {
+              localSignVotesRef.current.push(detection.detectedLocalSign.gloss);
+              if (localSignVotesRef.current.length > 10) localSignVotesRef.current.shift();
+            }
             if (detection.motionEnergy > peakMotionRef.current) {
               peakMotionRef.current = detection.motionEnergy;
             }
@@ -1437,8 +1408,8 @@ export default function InCallScreen({
             const isMediaPipeHit = detection.engine === "mediapipe-hand-landmarker";
             const hasIntentionalSign =
               Boolean(detection.detectedLocalSign) ||
-              (isMediaPipeHit && poseBufferRef.current.length >= 6) ||
-              peakMotionRef.current > 2.4;
+              (isMediaPipeHit && poseBufferRef.current.length >= 5) ||
+              peakMotionRef.current > 1.5;
             const gestureCompleted =
               (Boolean(detection.detectedLocalSign) && poseBufferRef.current.length >= 5) ||
               (poseBufferRef.current.length >= 6 && quietFramesAfterMotionRef.current >= 2);
@@ -1447,33 +1418,19 @@ export default function InCallScreen({
             if (
               hasIntentionalSign &&
               (gestureCompleted || bufferFull) &&
-              now - lastPoseInferRef.current > 1500
+              now - lastPoseInferRef.current > 1400
             ) {
               lastPoseInferRef.current = now;
-              const snapshot = [...poseBufferRef.current];
-              const snaps = [...frameSnapsRef.current];
-              const summary = handSummaryRef.current;
-              poseBufferRef.current = [];
-              frameSnapsRef.current = [];
-              peakMotionRef.current = 0;
-              quietFramesAfterMotionRef.current = 0;
-              void triggerInCallPoseToVoice(snapshot, snaps, summary);
+              flushSignBuffer();
             }
           } else if (
             !detection.hasActiveHands &&
             poseBufferRef.current.length >= 5 &&
-            (handSummaryRef.current.includes("localHint=") || peakMotionRef.current > 2.4) &&
-            now - lastPoseInferRef.current > 1500
+            (handSummaryRef.current.includes("localHint=") || peakMotionRef.current > 1.5) &&
+            now - lastPoseInferRef.current > 1400
           ) {
             lastPoseInferRef.current = now;
-            const snapshot = [...poseBufferRef.current];
-            const snaps = [...frameSnapsRef.current];
-            const summary = handSummaryRef.current;
-            poseBufferRef.current = [];
-            frameSnapsRef.current = [];
-            peakMotionRef.current = 0;
-            quietFramesAfterMotionRef.current = 0;
-            void triggerInCallPoseToVoice(snapshot, snaps, summary);
+            flushSignBuffer();
           }
         }
       } else if (frameCount % 10 === 0) {
@@ -1534,6 +1491,12 @@ export default function InCallScreen({
           }
           remoteVideoRef.current.play().catch(() => {});
         }
+        if (pendingSpeechRef.current) {
+          const pending = pendingSpeechRef.current;
+          pendingSpeechRef.current = null;
+          setRemoteAudioMutedByAutoplay(false);
+          void speakTranslatedText(pending.text, pending.audioWavBase64, true);
+        }
       }}
       className="absolute inset-0 bg-[#151B29] z-50 overflow-hidden flex flex-col justify-between font-sans select-none"
     >
@@ -1564,11 +1527,17 @@ export default function InCallScreen({
           {remoteAudioMutedByAutoplay && (
             <button
               onClick={() => {
+                unlockAudioPlayback();
                 if (remoteVideoRef.current) {
                   remoteVideoRef.current.muted = false;
                   remoteVideoRef.current.play().catch(() => {});
                 }
                 setRemoteAudioMutedByAutoplay(false);
+                if (pendingSpeechRef.current) {
+                  const pending = pendingSpeechRef.current;
+                  pendingSpeechRef.current = null;
+                  void speakTranslatedText(pending.text, pending.audioWavBase64, true);
+                }
               }}
               className="px-2.5 py-1.5 rounded-lg bg-[#22F3A6] text-[#0E1523] text-xs font-semibold flex items-center gap-1 shadow-lg cursor-pointer"
             >
@@ -1674,10 +1643,16 @@ export default function InCallScreen({
         )}
 
         {/* Hand status indicator directly on self-preview */}
-        {isCamOn && (handDetected || isTranslatingSign) && (
-          <div className="absolute bottom-2 left-2 right-2 flex items-center gap-1.5 bg-[#0E1523]/80 backdrop-blur-sm px-2 py-1 rounded-md text-[10px] font-medium text-[#22F3A6]">
+        {isCamOn && (handDetected || isTranslatingSign || lastRecognizedSign) && (
+          <div className="absolute bottom-2 left-2 right-2 flex items-center gap-1.5 bg-[#0E1523]/85 backdrop-blur-sm px-2 py-1 rounded-md text-[10px] font-medium text-[#22F3A6]">
             <span className="w-1.5 h-1.5 rounded-full bg-[#22F3A6] animate-pulse shrink-0" />
-            <span className="truncate">{isTranslatingSign ? "Translating…" : "Hand detected"}</span>
+            <span className="truncate">
+              {isTranslatingSign
+                ? "Translating sign…"
+                : lastRecognizedSign
+                  ? `Sent: ${lastRecognizedSign}`
+                  : "Hand detected"}
+            </span>
           </div>
         )}
 
@@ -1736,7 +1711,16 @@ export default function InCallScreen({
                 </div>
               )}
 
-              <div className="bg-[#141A29]/90 backdrop-blur-md border border-white/10 rounded-2xl px-4 py-3 shadow-xl space-y-1">
+              <div className="bg-[#141A29]/90 backdrop-blur-md border border-white/10 rounded-2xl px-4 py-3 shadow-xl space-y-1.5">
+                {recentCaptions.length > 1 && (
+                  <div className="space-y-0.5 pb-1 border-b border-white/10">
+                    {recentCaptions.slice(0, -1).map((item) => (
+                      <p key={item.id} className="text-[11px] text-slate-400 truncate">
+                        <span className="text-slate-300 font-medium">{item.speaker}:</span> {item.text}
+                      </p>
+                    ))}
+                  </div>
+                )}
                 {activeSubtitle ? (
                   <>
                     <div className="flex items-center justify-between gap-2 text-[11px]">

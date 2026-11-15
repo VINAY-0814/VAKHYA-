@@ -28,7 +28,14 @@ const ROOT_DIR = process.cwd();
 
 const ai =
   process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== "MY_GEMINI_API_KEY"
-    ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
+    ? new GoogleGenAI({
+        apiKey: process.env.GEMINI_API_KEY,
+        httpOptions: {
+          headers: {
+            "User-Agent": "aistudio-build",
+          },
+        },
+      })
     : null;
 
 const GEMINI_MODEL_CANDIDATES = [
@@ -962,11 +969,14 @@ async function startServer() {
         THANK_YOU: "Thank you!",
       };
 
+      const STEADY_ICONIC_SIGNS = new Set(["I_LOVE_YOU", "CALL_ME", "OK", "GOOD", "TWO", "THREE"]);
       const hintMatch = String(hand_summary || "").match(/localHint=([A-Z_]+)/);
+      const localHintGloss = hintMatch ? hintMatch[1] : undefined;
+      const isSteadyHint = String(hand_summary || "").includes("steadyHint=true");
       let recognizedGloss: string | undefined = gloss_hint
         ? String(gloss_hint).toUpperCase()
-        : hintMatch
-          ? hintMatch[1]
+        : localHintGloss && (isSteadyHint || STEADY_ICONIC_SIGNS.has(localHintGloss))
+          ? localHintGloss
           : undefined;
       let visionSentence: string | undefined;
       let visionConfidence: number | undefined;
@@ -981,7 +991,7 @@ async function startServer() {
             },
           }));
           parts.push({
-            text: `You are Vakhya's real-time ${signLanguage} sign language interpreter. Inspect these sequential webcam frames (MediaPipe hand geometry: ${hand_summary || "no landmarks"}). If hands are missing, blurry, blank, or not clearly performing an intentional ${signLanguage} sign, you MUST set hasSign to false and confidence below 0.5. Never guess random unrelated words. Only when a clear ${signLanguage} sign is shown, return its gloss, concise English phrase, and confidence (0..1).`,
+            text: `You are Vakhya's real-time ${signLanguage} sign language interpreter during a live video call. Inspect these sequential webcam frames (MediaPipe hand geometry: ${hand_summary || "no landmarks"}). If hands are missing, blurry, blank, or not clearly performing an intentional ${signLanguage} sign, set hasSign to false and confidence below 0.5. Never guess unrelated random words. When a clear ${signLanguage} sign or gesture is shown (e.g. Hello, Thank you, Please, Sorry, Yes, No, Help, Good morning, How are you, Wait, Stop, Water, Doctor, Home, Name, etc.), return its GLOSS, natural conversational English phrase in sentence, and confidence (0..1).`,
           });
 
           const parsed = await callGeminiJson(parts, {
@@ -1001,7 +1011,7 @@ async function startServer() {
           const conf = Number(parsed?.confidence ?? 0);
           if (
             parsed?.hasSign &&
-            conf >= 0.72 &&
+            conf >= 0.68 &&
             parsed?.gloss &&
             parsed?.sentence &&
             String(parsed.gloss).toUpperCase() !== "NONE"
@@ -1010,6 +1020,8 @@ async function startServer() {
             visionSentence = String(parsed.sentence).trim();
             visionConfidence = conf;
             visionModel = "vakhya-gemini-vision-3dcnn";
+          } else if (localHintGloss) {
+            recognizedGloss = localHintGloss;
           } else {
             return res.json({
               recognized: false,
@@ -1021,7 +1033,12 @@ async function startServer() {
           }
         } catch (err: any) {
           console.log("[VAKHYA S2V] Fallback to pose classifier:", err?.message || "timeout");
+          if (localHintGloss) {
+            recognizedGloss = localHintGloss;
+          }
         }
+      } else if (!recognizedGloss && localHintGloss) {
+        recognizedGloss = localHintGloss;
       }
 
       if (pythonAvailable) {
@@ -1040,8 +1057,9 @@ async function startServer() {
             s2v.recognized_gloss ||
             "Hello";
           const audioWavBase64 =
+            (await synthesizeGeminiSpeechWav(resolvedSentence, voicePreset)) ||
             s2v.audio?.audio_wav_base64 ||
-            (await synthesizeGeminiSpeechWav(resolvedSentence, voicePreset));
+            null;
           return res.json({
             recognized: true,
             gloss: resolvedGloss,

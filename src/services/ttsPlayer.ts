@@ -128,6 +128,7 @@ export async function playWavAudio(
   if (ctx) {
     try {
       if (ctx.state === "suspended") await ctx.resume();
+      if (ctx.state !== "running") return false;
       const buffer = await ctx.decodeAudioData(decodeBase64AudioToArrayBuffer(cleanB64));
       const src = ctx.createBufferSource();
       src.buffer = buffer;
