@@ -88,6 +88,7 @@ async function callGeminiJson(contents: any, config: Record<string, any>): Promi
 }
 
 const ttsAudioCache = new Map<string, string>();
+let ttsQuotaCooldownUntil = 0;
 
 function mapVoicePresetToGeminiVoice(preset?: string): string {
   const lower = String(preset || "").toLowerCase();
@@ -131,7 +132,12 @@ async function synthesizeGeminiSpeechWav(
   const cached = ttsAudioCache.get(cacheKey);
   if (cached) return cached;
 
+  if (Date.now() < ttsQuotaCooldownUntil) {
+    return null;
+  }
+
   const ttsModels = ["gemini-3.8-flash-lite-tts", "gemini-2.5-flash-preview-tts"];
+  let hitRateLimit = false;
   for (const ttsModel of ttsModels) {
     try {
       const response = await ai.models.generateContent({
@@ -156,7 +162,7 @@ async function synthesizeGeminiSpeechWav(
               prebuiltVoiceConfig: { voiceName },
             },
           },
-          abortSignal: AbortSignal.timeout(10000),
+          abortSignal: AbortSignal.timeout(8000),
         },
       });
 
@@ -184,8 +190,15 @@ async function synthesizeGeminiSpeechWav(
       ttsAudioCache.set(cacheKey, wavBase64);
       return wavBase64;
     } catch (err: any) {
-      console.warn(`[VAKHYA TTS] ${ttsModel} failed:`, err?.message || "unknown");
+      const msg = String(err?.message || "unknown");
+      if (msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED")) {
+        hitRateLimit = true;
+      }
+      console.warn(`[VAKHYA TTS] ${ttsModel} failed:`, msg);
     }
+  }
+  if (hitRateLimit) {
+    ttsQuotaCooldownUntil = Date.now() + 90_000;
   }
   return null;
 }
@@ -355,7 +368,7 @@ async function seedInitialData(store: InMemoryDataStore) {
     userType: "deaf",
     notificationsEnabled: true,
     translationEnabled: true,
-    preferredSignLanguage: "ASL",
+    preferredSignLanguage: "ISL",
   });
 
   const maya = await store.createUser({
@@ -368,7 +381,7 @@ async function seedInitialData(store: InMemoryDataStore) {
     userType: "hearing",
     notificationsEnabled: true,
     translationEnabled: true,
-    preferredSignLanguage: "ASL",
+    preferredSignLanguage: "ISL",
   });
 
   const contactMaya = await store.createContact({
@@ -528,7 +541,7 @@ async function startServer() {
           userType: "deaf",
           notificationsEnabled: true,
           translationEnabled: true,
-          preferredSignLanguage: "ASL",
+          preferredSignLanguage: "ISL",
         });
       }
 
@@ -572,7 +585,7 @@ async function startServer() {
           userType: "deaf",
           notificationsEnabled: true,
           translationEnabled: true,
-          preferredSignLanguage: "ASL",
+          preferredSignLanguage: "ISL",
         });
       } else {
         const ok = await bcrypt.compare(password, user.password);
@@ -1096,6 +1109,36 @@ async function startServer() {
       };
 
       const hasCameraFrames = Array.isArray(frames_base64) && frames_base64.length > 0;
+      const hintMatch = String(hand_summary || "").match(/localHint=([A-Z_]+)/);
+      const localHintGloss = hintMatch ? hintMatch[1] : undefined;
+      const explicitHint: string | undefined = gloss_hint
+        ? String(gloss_hint).toUpperCase()
+        : undefined;
+      const summaryStr = String(hand_summary || "");
+      const hasRealMediaPipeHands =
+        summaryStr === "" || /^hands=[12]\b/.test(summaryStr);
+
+      if (summaryStr === "NoActiveHands" && !explicitHint) {
+        return res.json({
+          recognized: false,
+          isInterim: false,
+          isUnknown: false,
+          needsClarification: false,
+          status: "idle",
+          gloss: "IDLE",
+          sentence: "",
+          confidence: 0,
+          model: "vakhya-mediapipe-gate",
+          audioWavBase64: null,
+        });
+      }
+
+      let visionUncertain: {
+        status: "unknown" | "clarify" | "idle";
+        clarificationPrompt?: string;
+        nonManual?: string;
+        confidence: number;
+      } | null = null;
 
       // Primary: Unbiased Open-Vocabulary Multimodal Vision + Continuous Signing Co-articulation
       if (ai && hasCameraFrames && !gloss_hint) {
@@ -1221,72 +1264,38 @@ Strict output rules:
             });
           }
 
-          if (status === "unknown") {
-            return res.json({
-              recognized: false,
-              isInterim: false,
-              isUnknown: true,
-              needsClarification: true,
-              status: "unknown",
-              clarificationPrompt:
-                String(parsed?.clarificationPrompt || "").trim() ||
-                "Unknown sign — I didn't recognize that gesture confidently. Could you repeat it clearly?",
-              gloss: "UNKNOWN",
-              pendingGlossStream: [],
-              sentence: "",
+          // Vision returned unknown / clarify / idle. If MediaPipe landmarks are absent or uncertain, keep this result as fallback if kinematic classifier also says unknown/idle.
+          if (status === "unknown" || status === "clarify" || status === "idle") {
+            visionUncertain = {
+              status: status as "unknown" | "clarify" | "idle",
+              clarificationPrompt: String(parsed?.clarificationPrompt || "").trim() || undefined,
               nonManual: String(parsed?.nonManual || "neutral"),
               confidence: conf,
-              model: "vakhya-continuous-isl-vision",
-              audioWavBase64: null,
-            });
+            };
+            if (!hasRealMediaPipeHands && !localHintGloss) {
+              return res.json({
+                recognized: false,
+                isInterim: false,
+                isUnknown: status === "unknown",
+                needsClarification: status === "unknown" || status === "clarify",
+                status,
+                clarificationPrompt: visionUncertain.clarificationPrompt || "",
+                gloss: status === "unknown" ? "UNKNOWN" : "",
+                pendingGlossStream: status === "idle" ? pendingArr : [],
+                sentence: "",
+                nonManual: visionUncertain.nonManual,
+                confidence: conf,
+                model: "vakhya-continuous-isl-vision",
+                audioWavBase64: null,
+              });
+            }
           }
-
-          if (status === "clarify") {
-            return res.json({
-              recognized: false,
-              isInterim: false,
-              isUnknown: false,
-              needsClarification: true,
-              status: "clarify",
-              clarificationPrompt:
-                String(parsed?.clarificationPrompt || "").trim() ||
-                "That sign was a little unclear. Could you repeat it slightly slower with both hands and your face visible?",
-              gloss: "",
-              pendingGlossStream: [],
-              sentence: "",
-              confidence: conf,
-              model: "vakhya-continuous-isl-vision",
-              audioWavBase64: null,
-            });
-          }
-
-          return res.json({
-            recognized: false,
-            isInterim: false,
-            isUnknown: false,
-            needsClarification: false,
-            status: "idle",
-            gloss: "",
-            pendingGlossStream: pendingArr,
-            sentence: "",
-            confidence: conf,
-            model: "vakhya-continuous-isl-vision",
-            audioWavBase64: null,
-          });
         } catch (err: any) {
           console.log("[VAKHYA S2V] Open-vocab vision transient error, falling back to kinematic classifier:", err?.message || "timeout");
         }
       }
 
-      // Secondary / Non-camera pose-only or Vision-fallback path (42-sign kinematic classifier + unknown rejection)
-      const hintMatch = String(hand_summary || "").match(/localHint=([A-Z_]+)/);
-      const localHintGloss = hintMatch ? hintMatch[1] : undefined;
-      const explicitHint: string | undefined = gloss_hint
-        ? String(gloss_hint).toUpperCase()
-        : undefined;
-      const summaryStr = String(hand_summary || "");
-      const hasRealMediaPipeHands =
-        summaryStr === "" || /^hands=[12]\b/.test(summaryStr);
+      // Secondary / Non-camera pose-only or MediaPipe Kinematic confirmation (42-sign kinematic classifier + unknown rejection)
 
       if (pythonAvailable) {
         try {
@@ -1301,17 +1310,30 @@ Strict output rules:
           const pyGloss = String(s2v.recognized_gloss || "").toUpperCase();
 
           if (!pyRecognized && !explicitHint && !localHintGloss) {
-            const isUnk = (s2v.status === "unknown" || pyGloss === "UNKNOWN") && hasRealMediaPipeHands;
+            const visionIdle = visionUncertain?.status === "idle";
+            const isUnk =
+              !visionIdle &&
+              (s2v.status === "unknown" || pyGloss === "UNKNOWN" || visionUncertain?.status === "unknown" || visionUncertain?.status === "clarify") &&
+              hasRealMediaPipeHands;
+            const resolvedStatus = visionIdle
+              ? "idle"
+              : visionUncertain?.status === "clarify"
+                ? "clarify"
+                : isUnk
+                  ? "unknown"
+                  : "idle";
             return res.json({
               recognized: false,
               isInterim: false,
-              isUnknown: isUnk,
-              needsClarification: isUnk,
-              status: isUnk ? "unknown" : "idle",
-              clarificationPrompt: isUnk
-                ? "Sign not recognized confidently. Please perform a clear sign with hands and face in view."
-                : "",
-              gloss: isUnk ? "UNKNOWN" : "IDLE",
+              isUnknown: resolvedStatus === "unknown",
+              needsClarification: resolvedStatus === "unknown" || resolvedStatus === "clarify",
+              status: resolvedStatus,
+              clarificationPrompt:
+                resolvedStatus === "idle"
+                  ? ""
+                  : visionUncertain?.clarificationPrompt ||
+                    "Sign not recognized confidently. Please perform a clear sign with hands and face in view.",
+              gloss: resolvedStatus === "unknown" ? "UNKNOWN" : "IDLE",
               sentence: "",
               confidence: s2v.confidence ?? 0,
               model: s2v.model || "vakhya-multimodal-kinematic-v2",

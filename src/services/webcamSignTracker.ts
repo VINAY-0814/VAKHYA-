@@ -17,6 +17,8 @@ export interface UpperBodyPoseCues {
   leftElbow?: [number, number];
   rightElbow?: [number, number];
   nose?: [number, number];
+  bodyCenter?: [number, number];
+  shoulderWidth?: number;
   rightElbowAngle: number;
   leftElbowAngle: number;
 }
@@ -33,11 +35,14 @@ export interface PoseKeyframe {
   left_fingers?: number[];
   right_active?: boolean;
   left_active?: boolean;
+  body_center?: [number, number];
+  shoulder_width?: number;
   facial_cues?: FacialExpressionCues;
 }
 
 export interface HandDetectionResult {
   engine: "mediapipe-multimodal" | "mediapipe-hand-landmarker" | "cv-motion-kinematic";
+  landmarkerStatus: "idle" | "loading" | "ready" | "error";
   landmarksList: Array<Array<{ x: number; y: number; z: number }>>;
   handedness: string[];
   poseFrame: PoseKeyframe;
@@ -66,6 +71,11 @@ let sharedHandLandmarker: HandLandmarker | null = null;
 let sharedFaceLandmarker: FaceLandmarker | null = null;
 let sharedPoseLandmarker: PoseLandmarker | null = null;
 let initPromise: Promise<HandLandmarker | null> | null = null;
+let landmarkerStatus: "idle" | "loading" | "ready" | "error" = "idle";
+
+export function getLandmarkerStatus(): "idle" | "loading" | "ready" | "error" {
+  return landmarkerStatus;
+}
 
 async function createWithDelegateFallback<T>(
   factory: (delegate: "GPU" | "CPU") => Promise<T>
@@ -82,9 +92,13 @@ async function createWithDelegateFallback<T>(
 }
 
 export async function initSignLandmarkers(): Promise<HandLandmarker | null> {
-  if (sharedHandLandmarker) return sharedHandLandmarker;
+  if (sharedHandLandmarker) {
+    landmarkerStatus = "ready";
+    return sharedHandLandmarker;
+  }
   if (initPromise) return initPromise;
 
+  landmarkerStatus = "loading";
   initPromise = (async () => {
     try {
       const vision = await FilesetResolver.forVisionTasks("/mediapipe-wasm");
@@ -94,9 +108,9 @@ export async function initSignLandmarkers(): Promise<HandLandmarker | null> {
           baseOptions: { modelAssetPath: "/mediapipe-models/hand_landmarker.task", delegate },
           runningMode: "VIDEO",
           numHands: 2,
-          minHandDetectionConfidence: 0.42,
-          minHandPresenceConfidence: 0.42,
-          minTrackingConfidence: 0.42,
+          minHandDetectionConfidence: 0.4,
+          minHandPresenceConfidence: 0.4,
+          minTrackingConfidence: 0.4,
         })
       );
 
@@ -129,11 +143,15 @@ export async function initSignLandmarkers(): Promise<HandLandmarker | null> {
       sharedPoseLandmarker = poseRes;
 
       if (!sharedHandLandmarker) {
+        landmarkerStatus = "error";
         initPromise = null;
+      } else {
+        landmarkerStatus = "ready";
       }
       return sharedHandLandmarker;
     } catch (err) {
-      console.warn("[VAKHYA Sign] Multimodal landmarker init failed, using fallback:", err);
+      console.warn("[VAKHYA Sign] Multimodal landmarker init failed:", err);
+      landmarkerStatus = "error";
       initPromise = null;
       return null;
     }
@@ -231,17 +249,17 @@ function classifyLocalSign(
       hands[0].wrist.y - hands[1].wrist.y
     );
     const bothOpen = hands.every((h) => h.fingers.openScore >= 0.8);
-    if (bothOpen && dist < 0.24 && motionEnergy < 1.8) {
-      return { gloss: "NAMASTE", sentence: "Namaste, greetings!", confidence: 0.85 };
+    if (bothOpen && dist < 0.25 && motionEnergy < 2.2) {
+      return { gloss: "NAMASTE", sentence: "Namaste, greetings!", confidence: 0.88 };
     }
     const oneOpenOneThumb =
       (hands[0].fingers.openScore >= 0.8 && hands[1].fingers.thumb && !hands[1].fingers.middle) ||
       (hands[1].fingers.openScore >= 0.8 && hands[0].fingers.thumb && !hands[0].fingers.middle);
-    if (oneOpenOneThumb && dist < 0.34) {
-      return { gloss: "HELP", sentence: "Please help me.", confidence: 0.82 };
+    if (oneOpenOneThumb && dist < 0.36) {
+      return { gloss: "HELP", sentence: "Please help me.", confidence: 0.83 };
     }
     if (bothOpen && motionEnergy > 2.6 && dist > 0.35) {
-      return { gloss: "EMERGENCY", sentence: "Emergency!", confidence: 0.8 };
+      return { gloss: "EMERGENCY", sentence: "Emergency!", confidence: 0.82 };
     }
     return null;
   }
@@ -250,30 +268,50 @@ function classifyLocalSign(
   const h = hands[0];
   const { thumb, index, middle, ring, pinky, thumbIndexPinch } = h.fingers;
   const wy = h.wrist.y;
+  const wx = h.wrist.x;
+
+  // Ignore hands resting at very bottom edge of frame unless explicit clear gesture
+  if (wy > 0.86) return null;
 
   if (thumb && index && !middle && !ring && pinky) {
-    return { gloss: "I_LOVE_YOU", sentence: "I love you.", confidence: 0.9 };
+    return { gloss: "I_LOVE_YOU", sentence: "I love you.", confidence: 0.91 };
   }
   if (thumb && !index && !middle && !ring && pinky) {
-    return { gloss: "CALL", sentence: "Call me.", confidence: 0.85 };
+    return { gloss: "CALL", sentence: "Call me.", confidence: 0.86 };
   }
   if (thumbIndexPinch && middle && ring && pinky) {
-    return { gloss: "OK", sentence: "Okay, I understand.", confidence: 0.85 };
+    return { gloss: "OK", sentence: "Okay, I understand.", confidence: 0.86 };
   }
   if (thumb && !index && !middle && !ring && !pinky && h.thumbTip.y < h.wrist.y - 0.025) {
-    return { gloss: "GOOD", sentence: "Good.", confidence: 0.84 };
+    return { gloss: "GOOD", sentence: "Good.", confidence: 0.85 };
   }
-  if (!thumb && index && middle && ring && !pinky) {
-    return { gloss: wy < 0.38 ? "WATER" : "THREE", sentence: wy < 0.38 ? "I need water." : "Three.", confidence: 0.8 };
+  if (!thumb && index && middle && ring && pinky && wy < 0.72) {
+    return { gloss: "FOUR", sentence: "Four.", confidence: 0.82 };
   }
-  if (!thumb && index && middle && !ring && !pinky) {
-    return { gloss: "TWO", sentence: "Two.", confidence: 0.82 };
+  if (!thumb && index && middle && ring && !pinky && wy < 0.76) {
+    return wy < 0.38
+      ? { gloss: "WATER", sentence: "I need water.", confidence: 0.82 }
+      : { gloss: "THREE", sentence: "Three.", confidence: 0.83 };
   }
-  if (!thumb && index && !middle && !ring && !pinky) {
-    return { gloss: "YOU", sentence: "You.", confidence: 0.76 };
+  if (!thumb && index && middle && !ring && !pinky && wy < 0.76) {
+    return { gloss: "TWO", sentence: "Two.", confidence: 0.84 };
   }
-  if (index && middle && ring && pinky && wy < 0.45 && motionEnergy > 1.2) {
-    return { gloss: "HELLO", sentence: "Hello!", confidence: 0.82 };
+  if (!thumb && index && !middle && !ring && !pinky && wy < 0.76) {
+    if (wy > 0.50 && Math.abs(wx - 0.5) < 0.14) {
+      return { gloss: "ME", sentence: "Me.", confidence: 0.80 };
+    }
+    if (wy >= 0.42 && wy <= 0.68 && motionEnergy < 1.6) {
+      return { gloss: "ONE", sentence: "One.", confidence: 0.82 };
+    }
+    return { gloss: "YOU", sentence: "You.", confidence: 0.78 };
+  }
+  if (thumb && index && middle && ring && pinky) {
+    if (wy < 0.48 && motionEnergy >= 1.1) {
+      return { gloss: "HELLO", sentence: "Hello!", confidence: 0.83 };
+    }
+    if (wy < 0.68 && motionEnergy < 1.1) {
+      return { gloss: "FIVE", sentence: "Five.", confidence: 0.81 };
+    }
   }
 
   return null;
@@ -359,12 +397,20 @@ export class WebcamSignTracker {
           const rWrist: [number, number] = [mx(lm[rWrIdx].x), lm[rWrIdx].y];
           const lWrist: [number, number] = [mx(lm[lWrIdx].x), lm[lWrIdx].y];
 
+          const bodyCenter: [number, number] = [
+            Number(((rShoulder[0] + lShoulder[0]) / 2).toFixed(3)),
+            Number(((rShoulder[1] + lShoulder[1]) / 2).toFixed(3)),
+          ];
+          const shoulderWidth = Number(Math.abs(rShoulder[0] - lShoulder[0]).toFixed(3));
+
           this.cachedBodyPose = {
             rightShoulder: rShoulder,
             leftShoulder: lShoulder,
             rightElbow: rElbow,
             leftElbow: lElbow,
             nose: [mx(lm[0].x), lm[0].y],
+            bodyCenter,
+            shoulderWidth,
             rightElbowAngle: computeElbowAngle(rShoulder, rElbow, rWrist) ?? 75,
             leftElbowAngle: computeElbowAngle(lShoulder, lElbow, lWrist) ?? 85,
           };
@@ -418,10 +464,8 @@ export class WebcamSignTracker {
     const relT = Number((((now - this.startTs) % 2000) / 2000).toFixed(3));
     const mx = (x: number) => (mirrorX ? 1 - x : x);
 
-    // 1. Real pixel-difference motion energy (normalized into mirrored coordinates)
+    // 1. Real pixel-difference motion energy
     let motionEnergy = 0;
-    let rightCentroid: [number, number] | null = null;
-    let leftCentroid: [number, number] | null = null;
 
     if (this.offCtx && video.readyState >= 2 && video.videoWidth > 0) {
       const w = this.offscreen.width;
@@ -429,47 +473,19 @@ export class WebcamSignTracker {
       this.offCtx.drawImage(video, 0, 0, w, h);
       const data = this.offCtx.getImageData(0, 0, w, h).data;
 
-      let rx = 0, ry = 0, rc = 0;
-      let lx = 0, ly = 0, lc = 0;
       let diffSum = 0;
-
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          const idx = (y * w + x) * 4;
-          const r = data[idx];
-          const g = data[idx + 1];
-          const b = data[idx + 2];
-
-          let diff = 0;
-          if (this.prevFrame) {
-            diff =
-              (Math.abs(r - this.prevFrame[idx]) +
-                Math.abs(g - this.prevFrame[idx + 1]) +
-                Math.abs(b - this.prevFrame[idx + 2])) /
-              3;
-            diffSum += diff;
-          }
-
-          if (diff > 18) {
-            const nx = mirrorX ? 1 - x / w : x / w;
-            const ny = y / h;
-            if (nx >= 0.5) {
-              rx += nx;
-              ry += ny;
-              rc++;
-            } else {
-              lx += nx;
-              ly += ny;
-              lc++;
-            }
-          }
+      for (let i = 0; i < data.length; i += 4) {
+        if (this.prevFrame) {
+          diffSum +=
+            (Math.abs(data[i] - this.prevFrame[i]) +
+              Math.abs(data[i + 1] - this.prevFrame[i + 1]) +
+              Math.abs(data[i + 2] - this.prevFrame[i + 2])) /
+            3;
         }
       }
 
       this.prevFrame = new Uint8ClampedArray(data);
       motionEnergy = diffSum / (w * h);
-      if (rc > 22) rightCentroid = [Number((rx / rc).toFixed(3)), Number((ry / rc).toFixed(3))];
-      if (lc > 22) leftCentroid = [Number((lx / lc).toFixed(3)), Number((ly / lc).toFixed(3))];
     }
 
     // 2. Multimodal MediaPipe Detection (Hands + throttled Pose/Face)
@@ -602,6 +618,7 @@ export class WebcamSignTracker {
 
           return {
             engine: engineType,
+            landmarkerStatus,
             landmarksList: canonicalLandmarks,
             handedness: resolvedLabels,
             poseFrame: {
@@ -616,6 +633,8 @@ export class WebcamSignTracker {
               left_fingers: leftFingers,
               right_active: rightActive,
               left_active: leftActive,
+              body_center: this.cachedBodyPose.bodyCenter,
+              shoulder_width: this.cachedBodyPose.shoulderWidth,
               facial_cues: this.cachedFacialCues,
             },
             bodyPose: this.cachedBodyPose,
@@ -627,8 +646,8 @@ export class WebcamSignTracker {
             detectedLocalSign: localSign,
           };
         }
-      } catch {
-        // fall through to no active hands
+      } catch (err) {
+        console.warn("[VAKHYA Sign] Hand detectFrame warning:", err);
       }
     }
 
@@ -638,6 +657,7 @@ export class WebcamSignTracker {
 
     return {
       engine: sharedHandLandmarker ? "mediapipe-hand-landmarker" : "cv-motion-kinematic",
+      landmarkerStatus,
       landmarksList: [],
       handedness: [],
       poseFrame: {
@@ -650,13 +670,19 @@ export class WebcamSignTracker {
         left_elbow_angle: 85,
         right_active: false,
         left_active: false,
+        body_center: this.cachedBodyPose.bodyCenter,
+        shoulder_width: this.cachedBodyPose.shoulderWidth,
         facial_cues: this.cachedFacialCues,
       },
       bodyPose: this.cachedBodyPose,
       facialCues: this.cachedFacialCues,
       motionEnergy,
       hasActiveHands: false,
-      handSummary: sharedHandLandmarker ? "NoActiveHands" : "LandmarkerInitializing",
+      handSummary: sharedHandLandmarker
+        ? "NoActiveHands"
+        : landmarkerStatus === "error"
+          ? "LandmarkerUnavailable"
+          : "LandmarkerInitializing",
       fingerSignature: "none",
       detectedLocalSign: null,
     };
@@ -665,7 +691,7 @@ export class WebcamSignTracker {
 
 /**
  * 3-state Gesture Boundary State Machine (IDLE -> SIGNING -> SETTLED)
- * Prevents repeated duplicate translations when user holds a stationary pose or isn't signing.
+ * Supports BOTH dynamic motion signs AND static/held signs while preventing repeated duplicate predictions.
  */
 export class GestureBoundaryTracker {
   private state: "IDLE" | "SIGNING" | "SETTLED" = "IDLE";
@@ -677,6 +703,7 @@ export class GestureBoundaryTracker {
   private activeTravel = 0;
   private fingerChanges = 0;
   private quietFrames = 0;
+  private isNewGestureEntry = false;
   private lastAnchorPose: PoseKeyframe | null = null;
   private lastFingerSig = "";
   private settledPose: PoseKeyframe | null = null;
@@ -693,6 +720,7 @@ export class GestureBoundaryTracker {
     this.activeTravel = 0;
     this.fingerChanges = 0;
     this.quietFrames = 0;
+    this.isNewGestureEntry = false;
     this.lastAnchorPose = null;
     this.lastFingerSig = "";
     this.settledPose = null;
@@ -724,7 +752,11 @@ export class GestureBoundaryTracker {
   } | null {
     // 1. Hands absent / left frame
     if (!detection.hasActiveHands) {
-      if (this.state === "SIGNING" && this.poseBuffer.length >= 5 && this.hasMeaningfulMotion()) {
+      if (
+        this.state === "SIGNING" &&
+        this.poseBuffer.length >= 4 &&
+        (this.hasMeaningfulMotion() || this.isNewGestureEntry)
+      ) {
         const out = {
           shouldDispatch: true,
           phraseBoundary: true,
@@ -743,6 +775,7 @@ export class GestureBoundaryTracker {
         this.activeTravel = 0;
         this.fingerChanges = 0;
         this.quietFrames = 0;
+        this.isNewGestureEntry = false;
         this.settledPose = null;
         this.settledFingerSig = "";
       }
@@ -754,12 +787,12 @@ export class GestureBoundaryTracker {
 
     // 2. If SETTLED after a previous translation, DO NOT re-trigger unless a genuinely new gesture begins
     if (this.state === "SETTLED") {
-      if (nowMs - this.settledTs < 1400) {
+      if (nowMs - this.settledTs < 1200) {
         return null;
       }
       const deltaFromSettled = GestureBoundaryTracker.poseDelta(this.settledPose, detection.poseFrame);
       const shapeChanged =
-        detection.fingerSignature !== "fallback" &&
+        detection.fingerSignature !== "none" &&
         this.settledFingerSig !== "" &&
         detection.fingerSignature !== this.settledFingerSig;
 
@@ -776,13 +809,15 @@ export class GestureBoundaryTracker {
       this.activeTravel = 0;
       this.fingerChanges = 0;
       this.quietFrames = 0;
+      this.isNewGestureEntry = true;
       this.lastAnchorPose = detection.poseFrame;
       this.lastFingerSig = detection.fingerSignature;
     }
 
-    // 3. If IDLE, wait until real movement/re-entry starts a gesture (avoid idle holding noise)
+    // 3. If IDLE, enter active SIGNING for new gesture (static or dynamic)
     if (this.state === "IDLE") {
       this.state = "SIGNING";
+      this.isNewGestureEntry = true;
       this.lastAnchorPose = detection.poseFrame;
       this.lastFingerSig = detection.fingerSignature;
     }
@@ -791,7 +826,7 @@ export class GestureBoundaryTracker {
     const stepDelta = GestureBoundaryTracker.poseDelta(this.lastAnchorPose, detection.poseFrame);
     this.activeTravel += stepDelta;
     if (
-      detection.fingerSignature !== "fallback" &&
+      detection.fingerSignature !== "none" &&
       this.lastFingerSig &&
       detection.fingerSignature !== this.lastFingerSig
     ) {
@@ -810,16 +845,17 @@ export class GestureBoundaryTracker {
       if (snap) this.frameSnaps.push(snap);
     }
 
-    if (stepDelta < 0.014 && detection.motionEnergy < 1.8) {
+    if (stepDelta < 0.016 && detection.motionEnergy < 1.9) {
       this.quietFrames += 1;
     } else {
       this.quietFrames = 0;
     }
 
-    const phraseDone = this.poseBuffer.length >= 6 && this.quietFrames >= 3;
-    const chunkFull = this.poseBuffer.length >= 14;
+    const phraseDone = this.poseBuffer.length >= 5 && this.quietFrames >= 2;
+    const chunkFull = this.poseBuffer.length >= 12;
+    const staticHoldReady = this.isNewGestureEntry && (phraseDone || this.poseBuffer.length >= 7);
 
-    if ((phraseDone || chunkFull) && this.hasMeaningfulMotion()) {
+    if ((phraseDone || chunkFull) && (this.hasMeaningfulMotion() || staticHoldReady)) {
       const snaps = [...this.frameSnaps];
       const finalSnap = captureFrame();
       if (finalSnap) snaps.push(finalSnap);
@@ -827,7 +863,7 @@ export class GestureBoundaryTracker {
       const poses = [...this.poseBuffer];
       const summary = this.handSummary;
 
-      if (phraseDone) {
+      if (phraseDone || staticHoldReady) {
         this.markSettled(detection.poseFrame, detection.fingerSignature, nowMs);
       } else {
         // Mid-stream continuous overlap chunk
@@ -837,11 +873,12 @@ export class GestureBoundaryTracker {
         this.activeTravel = 0;
         this.fingerChanges = 0;
         this.quietFrames = 0;
+        this.isNewGestureEntry = false;
       }
 
       return {
         shouldDispatch: true,
-        phraseBoundary: phraseDone,
+        phraseBoundary: phraseDone || staticHoldReady,
         poses,
         snaps,
         handSummary: summary,
@@ -867,33 +904,11 @@ export class GestureBoundaryTracker {
     this.activeTravel = 0;
     this.fingerChanges = 0;
     this.quietFrames = 0;
+    this.isNewGestureEntry = false;
     this.settledPose = lastPose;
     this.settledFingerSig = lastSig;
     this.settledTs = nowMs;
   }
-}
-
-function buildHandFromCentroid(cx: number, cy: number): Array<{ x: number; y: number; z: number }> {
-  const pts: Array<{ x: number; y: number; z: number }> = [];
-  pts.push({ x: cx, y: cy + 0.08, z: 0 });
-  const fingerOffsets = [
-    [-0.05, 0.04],
-    [-0.025, -0.02],
-    [0, -0.04],
-    [0.025, -0.02],
-    [0.05, 0.01],
-  ];
-  for (let f = 0; f < 5; f++) {
-    const [dx, dy] = fingerOffsets[f];
-    for (let j = 1; j <= 4; j++) {
-      pts.push({
-        x: cx + dx * (j * 0.45),
-        y: cy + 0.06 + (dy - 0.03) * (j * 0.55),
-        z: 0,
-      });
-    }
-  }
-  return pts;
 }
 
 export function drawRealHandSkeleton(

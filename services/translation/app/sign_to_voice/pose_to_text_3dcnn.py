@@ -106,7 +106,8 @@ class PoseToText3DCNN:
                 "non_manual": {},
             }
 
-        q_desc = self._compile_descriptor(keypoints)
+        norm_keypoints = self._normalize_framing(keypoints)
+        q_desc = self._compile_descriptor(norm_keypoints)
         if not q_desc["right_active"] and not q_desc["left_active"]:
             return {
                 "gloss": "IDLE",
@@ -121,7 +122,7 @@ class PoseToText3DCNN:
 
         # Prepare mirrored descriptor if left-hand-only signer is performing a one-handed sign
         is_left_only = q_desc["left_active"] and not q_desc["right_active"]
-        q_mirrored_desc = self._compile_descriptor(_mirror_sequence(keypoints)) if is_left_only else None
+        q_mirrored_desc = self._compile_descriptor(_mirror_sequence(norm_keypoints)) if is_left_only else None
 
         ranked: list[tuple[str, float]] = []
         for gloss, ref_desc in self._reference_specs.items():
@@ -170,6 +171,44 @@ class PoseToText3DCNN:
             "best_dist": round(best_dist, 4),
             "top_candidates": [{"gloss": g, "distance": round(d, 4)} for g, d in ranked[:3]],
         }
+
+    @staticmethod
+    def _normalize_framing(frames: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        centers = [
+            f["body_center"]
+            for f in frames
+            if isinstance(f.get("body_center"), (list, tuple)) and len(f["body_center"]) >= 2
+        ]
+        if not centers:
+            return frames
+
+        mean_cx = sum(float(c[0]) for c in centers) / len(centers)
+        mean_cy = sum(float(c[1]) for c in centers) / len(centers)
+        # Canonical torso shoulder midpoint in calibrated vocab is ~(0.50, 0.56)
+        dx = max(-0.18, min(0.18, 0.50 - mean_cx))
+        dy = max(-0.18, min(0.18, 0.56 - mean_cy))
+
+        if abs(dx) < 0.015 and abs(dy) < 0.015:
+            return frames
+
+        shifted: list[dict[str, Any]] = []
+        for f in frames:
+            rw = f.get("right_wrist", [0.68, 0.60, 0.05])
+            lw = f.get("left_wrist", [0.35, 0.72, 0.0])
+            shifted.append({
+                **f,
+                "right_wrist": [
+                    round(max(0.02, min(0.98, float(rw[0]) + dx)), 4),
+                    round(max(0.02, min(0.98, float(rw[1]) + dy)), 4),
+                    float(rw[2]) if len(rw) > 2 else 0.0,
+                ],
+                "left_wrist": [
+                    round(max(0.02, min(0.98, float(lw[0]) + dx)), 4),
+                    round(max(0.02, min(0.98, float(lw[1]) + dy)), 4),
+                    float(lw[2]) if len(lw) > 2 else 0.0,
+                ],
+            })
+        return shifted
 
     def _compile_descriptor(
         self,
