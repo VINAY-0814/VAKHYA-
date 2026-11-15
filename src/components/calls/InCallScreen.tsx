@@ -25,7 +25,8 @@ import { realtimeClient, SignalingEvent } from "../../services/realtimeClient";
 import {
   downsampleFrames,
   drawRealHandSkeleton,
-  initHandLandmarker,
+  GestureBoundaryTracker,
+  initSignLandmarkers,
   PoseKeyframe,
   WebcamSignTracker,
 } from "../../services/webcamSignTracker";
@@ -230,11 +231,7 @@ export default function InCallScreen({
   const ignoreOfferRef = useRef(false);
 
   const trackerRef = useRef<WebcamSignTracker | null>(null);
-  const poseBufferRef = useRef<PoseKeyframe[]>([]);
-  const frameSnapsRef = useRef<string[]>([]);
-  const handSummaryRef = useRef<string>("");
-  const peakMotionRef = useRef<number>(0);
-  const quietFramesAfterMotionRef = useRef<number>(0);
+  const boundaryRef = useRef<GestureBoundaryTracker>(new GestureBoundaryTracker());
   const lastPoseInferRef = useRef<number>(0);
   const lastClarifyTsRef = useRef<number>(0);
   const recentSignedSentencesRef = useRef<string[]>([]);
@@ -1238,7 +1235,7 @@ export default function InCallScreen({
     let frameCount = 0;
     let poseIdx = 0;
 
-    initHandLandmarker().catch(() => null);
+    initSignLandmarkers().catch(() => null);
     if (!trackerRef.current) trackerRef.current = new WebcamSignTracker();
 
     const triggerInCallPoseToVoice = async (
@@ -1283,14 +1280,16 @@ export default function InCallScreen({
           return;
         }
 
-        if (res.ok && data.needsClarification) {
+        if (res.ok && (data.isUnknown || data.status === "unknown" || data.needsClarification)) {
           pendingGlossStreamRef.current = [];
           setInterimGlossText("");
           if (now - lastClarifyTsRef.current > 4500) {
             lastClarifyTsRef.current = now;
             const msg =
               data.clarificationPrompt ||
-              "That sign was unclear — please keep both hands and face visible and sign slightly slower.";
+              (data.isUnknown
+                ? "Unknown sign — could not recognize that gesture confidently. Please sign clearly."
+                : "That sign was unclear — please keep both hands and face visible and sign slightly slower.");
             setClarificationPrompt(msg);
             setTimeout(() => {
               setClarificationPrompt((prev) => (prev === msg ? null : prev));
@@ -1353,36 +1352,11 @@ export default function InCallScreen({
       }
     };
 
-    const flushSignBuffer = (phraseBoundary: boolean) => {
-      const snapshot = [...poseBufferRef.current];
-      const snaps = [...frameSnapsRef.current];
-      if (localVideoRef.current && trackerRef.current) {
-        const finalSnap = trackerRef.current.captureCompactFrame(
-          localVideoRef.current,
-          isFrontCameraRef.current
-        );
-        if (finalSnap) snaps.push(finalSnap);
-      }
-      const summary = handSummaryRef.current;
-
-      // Keep a short co-articulation overlap when mid-stream so signs at chunk edges stay intact
-      if (!phraseBoundary) {
-        poseBufferRef.current = poseBufferRef.current.slice(-3);
-        frameSnapsRef.current = frameSnapsRef.current.slice(-2);
-      } else {
-        poseBufferRef.current = [];
-        frameSnapsRef.current = [];
-      }
-      peakMotionRef.current = 0;
-      quietFramesAfterMotionRef.current = 0;
-      void triggerInCallPoseToVoice(snapshot, snaps, summary, phraseBoundary);
-    };
-
     const renderLoop = () => {
       frameCount++;
       const now = Date.now();
 
-      // 1. Hand tracking on local camera
+      // 1. Multimodal Hand + Face + Pose tracking on local camera with 3-state anti-repeat boundary
       if (
         isCamOnRef.current &&
         localVideoRef.current &&
@@ -1390,12 +1364,12 @@ export default function InCallScreen({
         trackerRef.current
       ) {
         if (frameCount % 2 === 0) {
-          const detection = trackerRef.current.detectFrame(localVideoRef.current);
+          const mirror = isFrontCameraRef.current;
+          const detection = trackerRef.current.detectFrame(localVideoRef.current, mirror);
           setHandDetected((prev) =>
             prev !== detection.hasActiveHands ? detection.hasActiveHands : prev
           );
 
-          // Optional skeleton overlay directly inside self-preview
           if (showHandOverlayRef.current && skeletonCanvasRef.current) {
             const lctx = skeletonCanvasRef.current.getContext("2d");
             if (lctx) {
@@ -1406,61 +1380,34 @@ export default function InCallScreen({
                 skeletonCanvasRef.current.width,
                 skeletonCanvasRef.current.height,
                 detection,
-                isFrontCameraRef.current
+                mirror
               );
             }
           }
 
-          if (detection.hasActiveHands && frameCount % 4 === 0) {
-            poseBufferRef.current.push(detection.poseFrame);
-            if (poseBufferRef.current.length > 24) poseBufferRef.current.shift();
-            handSummaryRef.current = detection.handSummary;
-            if (detection.motionEnergy > peakMotionRef.current) {
-              peakMotionRef.current = detection.motionEnergy;
-            }
-
-            // Capture chronological frames evenly across continuous multi-hand/face gesture
-            if (frameSnapsRef.current.length < 12) {
-              const snap = trackerRef.current.captureCompactFrame(
-                localVideoRef.current,
-                isFrontCameraRef.current
-              );
-              if (snap) frameSnapsRef.current.push(snap);
-            }
-
-            if (detection.motionEnergy < 1.8) {
-              quietFramesAfterMotionRef.current += 1;
-            } else {
-              quietFramesAfterMotionRef.current = 0;
-            }
-
-            const isMediaPipeHit = detection.engine === "mediapipe-hand-landmarker";
-            const hasIntentionalSign =
-              isMediaPipeHit || peakMotionRef.current > 2.2;
-            const phraseCompleted =
-              poseBufferRef.current.length >= 6 && quietFramesAfterMotionRef.current >= 3;
-            const chunkFull = poseBufferRef.current.length >= 14;
-
-            if (
-              hasIntentionalSign &&
-              (phraseCompleted || chunkFull) &&
-              now - lastPoseInferRef.current > 1600
-            ) {
+          if (frameCount % 4 === 0) {
+            const event = boundaryRef.current.step(
+              detection,
+              () =>
+                localVideoRef.current && trackerRef.current
+                  ? trackerRef.current.captureCompactFrame(localVideoRef.current, mirror)
+                  : null,
+              now
+            );
+            if (event?.shouldDispatch && now - lastPoseInferRef.current > 1500) {
               lastPoseInferRef.current = now;
-              flushSignBuffer(phraseCompleted);
+              void triggerInCallPoseToVoice(
+                event.poses,
+                event.snaps,
+                event.handSummary,
+                event.phraseBoundary
+              );
             }
-          } else if (
-            !detection.hasActiveHands &&
-            poseBufferRef.current.length >= 5 &&
-            (handSummaryRef.current.includes("hands=") || peakMotionRef.current > 2.2) &&
-            now - lastPoseInferRef.current > 1600
-          ) {
-            lastPoseInferRef.current = now;
-            flushSignBuffer(true);
           }
         }
       } else if (frameCount % 10 === 0) {
         setHandDetected(false);
+        boundaryRef.current.reset();
       }
 
       // 2. Incoming Voice-to-Sign Avatar Canvas

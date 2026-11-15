@@ -122,14 +122,30 @@ class TranslationOrchestrator:
         )
         pre_s = time.perf_counter() - pre_start
 
-        # Stage 2: 3D-CNN Pose-to-Text inference
+        # Stage 2: Spatiotemporal Pose-to-Text inference (with calibrated unknown/idle rejection)
         inf_start = time.perf_counter()
         pred_res = self.pose_to_text.predict(pose_res["keypoints"], gloss_hint=gloss_hint)
         inf_s = time.perf_counter() - inf_start
 
-        # Stage 3: Text-to-Speech synthesis
+        # Stage 3: Text-to-Speech synthesis (only synthesize speech when a sign is actually recognized)
         tts_start = time.perf_counter()
-        tts_res = self.tts.synthesize(pred_res["text"], pitch=pitch, speed=speed)
+        if pred_res.get("recognized", True) and pred_res.get("text"):
+            tts_res = self.tts.synthesize(pred_res["text"], pitch=pitch, speed=speed)
+            raw_pcm = tts_res["raw_pcm"]
+            audio_payload = {
+                "sample_rate": tts_res["sample_rate"],
+                "audio_wav_base64": tts_res["audio_wav_base64"],
+                "pcm_bytes_length": len(raw_pcm),
+                "engine": tts_res["engine"],
+            }
+        else:
+            raw_pcm = b"\x00" * 1600
+            audio_payload = {
+                "sample_rate": 16000,
+                "audio_wav_base64": None,
+                "pcm_bytes_length": len(raw_pcm),
+                "engine": "silent-unrecognized",
+            }
         tts_s = time.perf_counter() - tts_start
 
         total_s = time.perf_counter() - t0
@@ -145,18 +161,17 @@ class TranslationOrchestrator:
             "direction": "sign_to_voice",
             "source": pose_res["source"],
             "frame_count": pose_res["frame_count"],
+            "recognized": pred_res.get("recognized", True),
+            "is_unknown": pred_res.get("is_unknown", False),
+            "status": pred_res.get("status", "recognized"),
             "recognized_gloss": pred_res["gloss"],
             "text": pred_res["text"],
             "confidence": pred_res["confidence"],
             "model": pred_res["model"],
             "non_manual_markers": pred_res["non_manual"],
-            "audio": {
-                "sample_rate": tts_res["sample_rate"],
-                "audio_wav_base64": tts_res["audio_wav_base64"],
-                "pcm_bytes_length": len(tts_res["raw_pcm"]),
-                "engine": tts_res["engine"],
-            },
-            "raw_pcm": tts_res["raw_pcm"],
+            "top_candidates": pred_res.get("top_candidates", []),
+            "audio": audio_payload,
+            "raw_pcm": raw_pcm,
             "latency": latency,
         }
 

@@ -11,7 +11,8 @@ import { theme } from "../theme";
 import {
   downsampleFrames,
   drawRealHandSkeleton,
-  initHandLandmarker,
+  GestureBoundaryTracker,
+  initSignLandmarkers,
   PoseKeyframe,
   WebcamSignTracker,
 } from "../services/webcamSignTracker";
@@ -48,9 +49,7 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
   const animationRef = useRef<number | null>(null);
   const isCameraActiveRef = useRef(false);
   const trackerRef = useRef<WebcamSignTracker | null>(null);
-  const poseBufferRef = useRef<PoseKeyframe[]>([]);
-  const frameSnapsRef = useRef<string[]>([]);
-  const handSummaryRef = useRef<string>("");
+  const boundaryRef = useRef<GestureBoundaryTracker>(new GestureBoundaryTracker());
   const lastAutoInferRef = useRef<number>(0);
   const recentSentencesRef = useRef<string[]>([]);
   const pendingGlossStreamRef = useRef<string[]>([]);
@@ -62,8 +61,9 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
   useEffect(() => {
     isCameraActiveRef.current = isCameraActive;
     if (isCameraActive) {
-      initHandLandmarker().catch(() => null);
+      initSignLandmarkers().catch(() => null);
       if (!trackerRef.current) trackerRef.current = new WebcamSignTracker();
+      boundaryRef.current.reset();
       navigator.mediaDevices
         ?.getUserMedia({ video: { width: 640, height: 480 }, audio: false })
         .then((stream) => {
@@ -86,8 +86,7 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
-      poseBufferRef.current = [];
-      frameSnapsRef.current = [];
+      boundaryRef.current.reset();
     }
 
     return () => {
@@ -135,12 +134,14 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
         return;
       }
 
-      if (data.needsClarification) {
+      if (data.isUnknown || data.status === "unknown" || data.needsClarification) {
         pendingGlossStreamRef.current = [];
         setInterimGlossStream([]);
         setClarificationPrompt(
           data.clarificationPrompt ||
-            "Sign was unclear — please keep both hands and face in frame and sign slightly slower."
+            (data.isUnknown
+              ? "Unknown sign — gesture could not be matched with high confidence. Please sign clearly."
+              : "Sign was unclear — please keep both hands and face in frame and sign slightly slower.")
         );
         return;
       }
@@ -173,7 +174,7 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
     }
   };
 
-  // Real-time MediaPipe + Computer Vision hand landmark tracking loop
+  // Real-time MediaPipe Hands + Face + Pose tracking with anti-repeat boundary state machine
   const drawSkeletalTracking = () => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
@@ -182,8 +183,6 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
     if (!ctx) return;
 
     let frameCounter = 0;
-    let peakMotion = 0;
-    let quietFrames = 0;
 
     const render = () => {
       if (!isCameraActiveRef.current) return;
@@ -195,65 +194,25 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
       if (canvas.height !== targetH) canvas.height = targetH;
 
       if (trackerRef.current && video.readyState >= 2) {
-        const detection = trackerRef.current.detectFrame(video);
+        const detection = trackerRef.current.detectFrame(video, true);
         drawRealHandSkeleton(ctx, canvas.width, canvas.height, detection, true);
 
-        if (detection.hasActiveHands && frameCounter % 3 === 0) {
-          poseBufferRef.current.push(detection.poseFrame);
-          if (poseBufferRef.current.length > 24) {
-            poseBufferRef.current.shift();
-          }
-          handSummaryRef.current = detection.handSummary;
-          if (detection.motionEnergy > peakMotion) peakMotion = detection.motionEnergy;
-
-          if (frameSnapsRef.current.length < 12) {
-            const snap = trackerRef.current.captureCompactFrame(video, true);
-            if (snap) frameSnapsRef.current.push(snap);
-          }
-
-          if (detection.motionEnergy < 1.8) {
-            quietFrames += 1;
-          } else {
-            quietFrames = 0;
-          }
-
+        if (frameCounter % 3 === 0) {
           const now = Date.now();
-          const hasSignal =
-            detection.engine === "mediapipe-hand-landmarker" || peakMotion > 2.2;
-          const phraseDone = poseBufferRef.current.length >= 6 && quietFrames >= 3;
-          const chunkFull = poseBufferRef.current.length >= 14;
-
-          if (hasSignal && (phraseDone || chunkFull) && now - lastAutoInferRef.current > 1800) {
+          const event = boundaryRef.current.step(
+            detection,
+            () => (trackerRef.current ? trackerRef.current.captureCompactFrame(video, true) : null),
+            now
+          );
+          if (event?.shouldDispatch && now - lastAutoInferRef.current > 1500) {
             lastAutoInferRef.current = now;
-            const snapshot = [...poseBufferRef.current];
-            const snaps = [...frameSnapsRef.current];
-            const summary = handSummaryRef.current;
-            if (!phraseDone) {
-              poseBufferRef.current = poseBufferRef.current.slice(-3);
-              frameSnapsRef.current = frameSnapsRef.current.slice(-2);
-            } else {
-              poseBufferRef.current = [];
-              frameSnapsRef.current = [];
-            }
-            peakMotion = 0;
-            quietFrames = 0;
-            void inferPoseBuffer(snapshot, snaps, summary, phraseDone);
+            void inferPoseBuffer(
+              event.poses,
+              event.snaps,
+              event.handSummary,
+              event.phraseBoundary
+            );
           }
-        } else if (
-          !detection.hasActiveHands &&
-          poseBufferRef.current.length >= 5 &&
-          (handSummaryRef.current.includes("hands=") || peakMotion > 2.2) &&
-          Date.now() - lastAutoInferRef.current > 1800
-        ) {
-          lastAutoInferRef.current = Date.now();
-          const snapshot = [...poseBufferRef.current];
-          const snaps = [...frameSnapsRef.current];
-          const summary = handSummaryRef.current;
-          poseBufferRef.current = [];
-          frameSnapsRef.current = [];
-          peakMotion = 0;
-          quietFrames = 0;
-          void inferPoseBuffer(snapshot, snaps, summary, true);
         }
       }
 

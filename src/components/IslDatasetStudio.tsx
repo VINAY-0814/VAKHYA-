@@ -7,17 +7,18 @@ import {
   Layers,
   Plus,
   Search,
-  Sparkles,
   Volume2,
   AlertCircle,
-  Clock,
+  ShieldCheck,
+  X,
 } from "lucide-react";
 import { UserProfile } from "../types";
 import { theme } from "../theme";
 import {
   downsampleFrames,
   drawRealHandSkeleton,
-  initHandLandmarker,
+  GestureBoundaryTracker,
+  initSignLandmarkers,
   PoseKeyframe,
   WebcamSignTracker,
 } from "../services/webcamSignTracker";
@@ -33,7 +34,11 @@ interface IslLexiconItem {
   spatialAnchor: string;
   nonManual: { eyebrows: string; mouth: string; headTilt: string };
   islNotes: string;
-  verificationStatus: "verified" | "community_review" | "needs_samples";
+  verificationStatus: "verified" | "trained_untested" | "catalog_target";
+  hasTrainingData: boolean;
+  cameraTested: boolean;
+  lastCameraConfidence?: number;
+  lastCameraTestAt?: string;
   sampleCount: number;
   verifiedBy?: string;
   updatedAt: string;
@@ -43,10 +48,10 @@ interface IslStats {
   targetGoal: number;
   totalCount: number;
   verifiedCount: number;
-  reviewCount: number;
-  needsSamplesCount: number;
+  trainedUntestedCount: number;
+  catalogCount: number;
   completionPct: number;
-  categoryBreakdown: Array<{ category: string; total: number; verified: number }>;
+  categoryBreakdown: Array<{ category: string; total: number; verified: number; trained: number }>;
 }
 
 interface IslDatasetStudioProps {
@@ -80,21 +85,30 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
   const [interimGlossStream, setInterimGlossStream] = useState<string[]>([]);
   const [liveSentence, setLiveSentence] = useState("");
   const [liveGloss, setLiveGloss] = useState("");
+  const [liveConfidence, setLiveConfidence] = useState<number | null>(null);
   const [liveNonManual, setLiveNonManual] = useState("");
+  const [liveTelemetry, setLiveTelemetry] = useState("");
   const [clarifyMsg, setClarifyMsg] = useState<string | null>(null);
+  const [isUnknownSign, setIsUnknownSign] = useState(false);
   const [isInferring, setIsInferring] = useState(false);
+
+  // Real-Camera Sign Verification State
+  const [cameraVerifyTarget, setCameraVerifyTarget] = useState<IslLexiconItem | null>(null);
+  const [verifyCapturedCount, setVerifyCapturedCount] = useState(0);
+  const [verifyMatchState, setVerifyMatchState] = useState<"waiting" | "matched" | "mismatch">("waiting");
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const trackerRef = useRef<WebcamSignTracker | null>(null);
+  const boundaryRef = useRef(new GestureBoundaryTracker());
   const rafRef = useRef<number | null>(null);
   const isCamOnRef = useRef(false);
   const isCapturingRef = useRef(false);
   const recordedPosesRef = useRef<PoseKeyframe[]>([]);
+  const cameraVerifyTargetRef = useRef<IslLexiconItem | null>(null);
+  cameraVerifyTargetRef.current = cameraVerifyTarget;
+  const cameraVerifyPosesRef = useRef<PoseKeyframe[]>([]);
 
-  const poseBufferRef = useRef<PoseKeyframe[]>([]);
-  const frameSnapsRef = useRef<string[]>([]);
-  const handSummaryRef = useRef("");
   const pendingGlossRef = useRef<string[]>([]);
   const recentContextRef = useRef<string[]>([]);
   const lastInferTsRef = useRef(0);
@@ -137,12 +151,12 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
         videoRef.current.srcObject = null;
       }
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      poseBufferRef.current = [];
-      frameSnapsRef.current = [];
+      boundaryRef.current.reset();
+      setLiveTelemetry("");
       return;
     }
 
-    initHandLandmarker().catch(() => null);
+    initSignLandmarkers().catch(() => null);
     if (!trackerRef.current) trackerRef.current = new WebcamSignTracker();
 
     navigator.mediaDevices
@@ -155,7 +169,7 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
         startTrackingLoop();
       })
       .catch(() => {
-        setErrorMessage("Camera access is needed for live ISL sample capture and continuous testing.");
+        setErrorMessage("Camera access is needed for live ISL sample capture, testing, and verification.");
         setIsCamOn(false);
       });
 
@@ -163,6 +177,43 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [isCamOn]);
+
+  const submitCameraVerification = async (
+    target: IslLexiconItem,
+    confidence: number,
+    keyframes: PoseKeyframe[]
+  ) => {
+    try {
+      const res = await fetch(`/api/isl/lexicon/${encodeURIComponent(target.id)}/camera-verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          verifiedBy: profile.name || "Camera Signer",
+          keyframes: keyframes.slice(-16),
+          confidence,
+          passed: true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrorMessage(data.error || "Camera verification failed.");
+        return false;
+      }
+      setItems((prev) => prev.map((it) => (it.id === target.id ? data.entry : it)));
+      if (data.stats) setStats(data.stats);
+      setVerifyMatchState("matched");
+      setStatusMessage(
+        `${target.gloss} passed real-camera verification (${Math.round(confidence * 100)}% confidence) and is now marked CAMERA VERIFIED.`
+      );
+      setCameraVerifyTarget(null);
+      cameraVerifyPosesRef.current = [];
+      setVerifyCapturedCount(0);
+      return true;
+    } catch {
+      setErrorMessage("Network error while saving camera verification.");
+      return false;
+    }
+  };
 
   const runContinuousInference = async (
     poses: PoseKeyframe[],
@@ -182,9 +233,9 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
           frames_base64: downsampleFrames(snaps, 6),
           hand_summary: summary,
           signLanguage: "ISL",
-          continuousMode: continuousModeRef.current,
+          continuousMode: cameraVerifyTargetRef.current ? false : continuousModeRef.current,
           phraseBoundary,
-          pendingGlossStream: pendingGlossRef.current,
+          pendingGlossStream: cameraVerifyTargetRef.current ? [] : pendingGlossRef.current,
           recentContext: recentContextRef.current.slice(-3),
           voicePreset: profile.voiceSettings.voiceName,
           pitch: profile.voiceSettings.pitch,
@@ -198,15 +249,26 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
         pendingGlossRef.current = data.pendingGlossStream;
         setInterimGlossStream(data.pendingGlossStream);
         setClarifyMsg(null);
+        setIsUnknownSign(false);
         return;
       }
 
-      if (data.needsClarification) {
+      if (data.isUnknown || data.status === "unknown" || data.needsClarification) {
         pendingGlossRef.current = [];
         setInterimGlossStream([]);
+        const unknownFlag = Boolean(data.isUnknown || data.status === "unknown");
+        setIsUnknownSign(unknownFlag);
+        setLiveGloss(unknownFlag ? "UNKNOWN" : "");
+        setLiveConfidence(typeof data.confidence === "number" ? data.confidence : 0);
         setClarifyMsg(
-          data.clarificationPrompt || "Sign unclear — please keep both hands & face in frame."
+          data.clarificationPrompt ||
+            (unknownFlag
+              ? "Unknown sign — did not match any known gesture with sufficient confidence."
+              : "Sign unclear — please keep both hands & face in frame.")
         );
+        if (cameraVerifyTargetRef.current) {
+          setVerifyMatchState("mismatch");
+        }
         return;
       }
 
@@ -214,7 +276,11 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
         pendingGlossRef.current = [];
         setInterimGlossStream([]);
         setClarifyMsg(null);
-        setLiveGloss(data.gloss || "");
+        setIsUnknownSign(false);
+        const recognizedGloss = String(data.gloss || "").toUpperCase();
+        const conf = typeof data.confidence === "number" ? data.confidence : 0.85;
+        setLiveGloss(recognizedGloss);
+        setLiveConfidence(conf);
         setLiveSentence(data.sentence);
         setLiveNonManual(data.nonManual || "neutral");
         recentContextRef.current = [...recentContextRef.current.slice(-3), String(data.sentence)];
@@ -226,6 +292,24 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
           pitch: profile.voiceSettings.pitch,
           speed: profile.voiceSettings.speed,
         });
+
+        // Check real-camera verification match
+        const target = cameraVerifyTargetRef.current;
+        if (target) {
+          const engKeyword = target.english.split("/")[0].trim().toLowerCase();
+          const glossMatched =
+            recognizedGloss === target.gloss ||
+            recognizedGloss.split(/[\s_+]+/).includes(target.gloss) ||
+            String(data.sentence).toLowerCase().includes(engKeyword);
+          if (glossMatched && conf >= 0.6) {
+            setVerifyMatchState("matched");
+            const kfs =
+              cameraVerifyPosesRef.current.length >= 2 ? cameraVerifyPosesRef.current : poses;
+            await submitCameraVerification(target, conf, kfs);
+          } else {
+            setVerifyMatchState("mismatch");
+          }
+        }
       }
     } catch {
       // ignore transient errors
@@ -242,8 +326,6 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
     if (!ctx) return;
 
     let tick = 0;
-    let peakMotion = 0;
-    let quietFrames = 0;
 
     const loop = () => {
       if (!isCamOnRef.current) return;
@@ -255,69 +337,44 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
       if (canvas.height !== h) canvas.height = h;
 
       if (trackerRef.current && video.readyState >= 2) {
-        const detection = trackerRef.current.detectFrame(video);
+        const detection = trackerRef.current.detectFrame(video, true);
         drawRealHandSkeleton(ctx, canvas.width, canvas.height, detection, true);
+
+        if (tick % 6 === 0) {
+          setLiveTelemetry(
+            `${detection.engine} • ${detection.hasActiveHands ? detection.handedness.join("+") || "Hand" : "No active hands"} • Face: ${detection.facialCues.eyebrows}/${detection.facialCues.headMovement}`
+          );
+        }
 
         if (isCapturingRef.current && detection.hasActiveHands && tick % 3 === 0) {
           recordedPosesRef.current.push(detection.poseFrame);
           setCapturedFramesCount(recordedPosesRef.current.length);
         }
 
-        if (!isCapturingRef.current && detection.hasActiveHands && tick % 3 === 0) {
-          poseBufferRef.current.push(detection.poseFrame);
-          if (poseBufferRef.current.length > 24) poseBufferRef.current.shift();
-          handSummaryRef.current = detection.handSummary;
-          if (detection.motionEnergy > peakMotion) peakMotion = detection.motionEnergy;
-
-          if (frameSnapsRef.current.length < 12) {
-            const snap = trackerRef.current.captureCompactFrame(video, true);
-            if (snap) frameSnapsRef.current.push(snap);
+        if (cameraVerifyTargetRef.current && detection.hasActiveHands && tick % 3 === 0) {
+          cameraVerifyPosesRef.current.push(detection.poseFrame);
+          if (cameraVerifyPosesRef.current.length > 24) {
+            cameraVerifyPosesRef.current.shift();
           }
+          setVerifyCapturedCount(cameraVerifyPosesRef.current.length);
+        }
 
-          if (detection.motionEnergy < 1.8) {
-            quietFrames += 1;
-          } else {
-            quietFrames = 0;
-          }
-
-          const hasSignal =
-            detection.engine === "mediapipe-hand-landmarker" || peakMotion > 2.2;
-          const phraseDone = poseBufferRef.current.length >= 6 && quietFrames >= 3;
-          const chunkFull = poseBufferRef.current.length >= 14;
+        if (!isCapturingRef.current && tick % 3 === 0) {
           const now = Date.now();
-
-          if (hasSignal && (phraseDone || chunkFull) && now - lastInferTsRef.current > 1800) {
+          const event = boundaryRef.current.step(
+            detection,
+            () => (trackerRef.current ? trackerRef.current.captureCompactFrame(video, true) : null),
+            now
+          );
+          if (event?.shouldDispatch && now - lastInferTsRef.current > 1600) {
             lastInferTsRef.current = now;
-            const poses = [...poseBufferRef.current];
-            const snaps = [...frameSnapsRef.current];
-            const summary = handSummaryRef.current;
-            if (!phraseDone) {
-              poseBufferRef.current = poseBufferRef.current.slice(-3);
-              frameSnapsRef.current = frameSnapsRef.current.slice(-2);
-            } else {
-              poseBufferRef.current = [];
-              frameSnapsRef.current = [];
-            }
-            peakMotion = 0;
-            quietFrames = 0;
-            void runContinuousInference(poses, snaps, summary, phraseDone);
+            void runContinuousInference(
+              event.poses,
+              event.snaps,
+              event.handSummary,
+              event.phraseBoundary
+            );
           }
-        } else if (
-          !isCapturingRef.current &&
-          !detection.hasActiveHands &&
-          poseBufferRef.current.length >= 5 &&
-          (handSummaryRef.current.includes("hands=") || peakMotion > 2.2) &&
-          Date.now() - lastInferTsRef.current > 1800
-        ) {
-          lastInferTsRef.current = Date.now();
-          const poses = [...poseBufferRef.current];
-          const snaps = [...frameSnapsRef.current];
-          const summary = handSummaryRef.current;
-          poseBufferRef.current = [];
-          frameSnapsRef.current = [];
-          peakMotion = 0;
-          quietFrames = 0;
-          void runContinuousInference(poses, snaps, summary, true);
         }
       }
 
@@ -341,12 +398,28 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
       isCapturingRef.current = false;
       setIsCapturingSample(false);
       setStatusMessage(
-        `Captured ${recordedPosesRef.current.length} landmark frames. Review details and save to the ISL Lexicon.`
+        `Captured ${recordedPosesRef.current.length} landmark frames. Save the sign, then test it with your camera to verify.`
       );
     }
   };
 
-  const handleSaveContribution = async (e: React.FormEvent, markVerified = false) => {
+  const handleStartCameraVerify = (item: IslLexiconItem) => {
+    setErrorMessage(null);
+    setStatusMessage(null);
+    setClarifyMsg(null);
+    setIsUnknownSign(false);
+    setVerifyMatchState("waiting");
+    cameraVerifyPosesRef.current = [];
+    setVerifyCapturedCount(0);
+    setCameraVerifyTarget(item);
+    boundaryRef.current.reset();
+    if (!isCamOn) {
+      setIsCamOn(true);
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleSaveContribution = async (e: React.FormEvent, startCameraTest = false) => {
     e.preventDefault();
     setErrorMessage(null);
     setStatusMessage(null);
@@ -369,7 +442,7 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
           nonManual: { eyebrows: recordEyebrows, mouth: "neutral", headTilt: "none" },
           islNotes: recordNotes.trim() || undefined,
           keyframes: recordedPosesRef.current.slice(0, 16),
-          verified: markVerified,
+          cameraTested: false,
           verifiedBy: profile.name || "ISL Signer",
         }),
       });
@@ -377,7 +450,7 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
       if (!res.ok) throw new Error(data.error || "Failed to save sign");
 
       setStatusMessage(
-        `${data.entry.gloss} saved (${data.entry.verificationStatus.replace("_", " ")} • ${data.entry.sampleCount} samples).`
+        `${data.entry.gloss} saved (${data.entry.verificationStatus.replace("_", " ")} • ${data.entry.sampleCount} samples). Run "Test with Camera" to mark it verified.`
       );
       recordedPosesRef.current = [];
       setCapturedFramesCount(0);
@@ -385,25 +458,11 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
       setRecordEnglish("");
       setRecordNotes("");
       await fetchLexicon();
+      if (startCameraTest && data.entry) {
+        handleStartCameraVerify(data.entry);
+      }
     } catch (err: any) {
       setErrorMessage(err.message);
-    }
-  };
-
-  const handleVerifySign = async (id: string) => {
-    try {
-      const res = await fetch(`/api/isl/lexicon/${encodeURIComponent(id)}/verify`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ verifiedBy: profile.name || "ISL Reviewer" }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setItems((prev) => prev.map((it) => (it.id === id ? data.entry : it)));
-        if (data.stats) setStats(data.stats);
-      }
-    } catch {
-      // ignore
     }
   };
 
@@ -437,20 +496,26 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
             </p>
           </div>
           {stats && (
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
               <div className="px-4 py-2.5 rounded-2xl bg-[#22F3A6]/10 border border-[#22F3A6]/30 text-right">
                 <div className="text-lg font-black text-[#22F3A6]">
                   {stats.verifiedCount} / {stats.targetGoal}
                 </div>
                 <div className="text-[10px] font-mono text-[var(--text-secondary)]/70">
-                  VERIFIED ISL SIGNS ({stats.completionPct}%)
+                  CAMERA VERIFIED ({stats.completionPct}%)
                 </div>
+              </div>
+              <div className="px-3.5 py-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-right">
+                <div className="text-sm font-bold text-amber-300">
+                  {stats.trainedUntestedCount}
+                </div>
+                <div className="text-[10px] font-mono text-amber-400">TRAINED (UNTESTED)</div>
               </div>
               <div className="px-3.5 py-2.5 rounded-2xl bg-[var(--button-glass-bg)] border border-[var(--border-subtle)] text-right">
                 <div className="text-sm font-bold text-[var(--text-primary)]">
-                  {stats.reviewCount + stats.needsSamplesCount}
+                  {stats.catalogCount}
                 </div>
-                <div className="text-[10px] font-mono text-amber-400">IN REVIEW</div>
+                <div className="text-[10px] font-mono text-slate-400">ROADMAP TARGETS</div>
               </div>
             </div>
           )}
@@ -461,7 +526,7 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
             <div className="w-full h-2.5 rounded-full bg-black/30 overflow-hidden border border-white/5">
               <div
                 className="h-full bg-gradient-to-r from-[#8A5CF6] via-[#D96FF2] to-[#22F3A6] transition-all duration-500"
-                style={{ width: `${Math.min(100, Math.max(3, stats.completionPct))}%` }}
+                style={{ width: `${Math.min(100, Math.max(2, stats.completionPct))}%` }}
               />
             </div>
             <div className="flex flex-wrap gap-1.5 pt-1">
@@ -470,7 +535,7 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
                   key={cat.category}
                   className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[var(--text-secondary)]"
                 >
-                  {cat.category}: {cat.verified}/{cat.total}
+                  {cat.category}: {cat.verified} cam • {cat.trained} trained / {cat.total}
                 </span>
               ))}
             </div>
@@ -529,6 +594,50 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
             </div>
           </div>
 
+          {cameraVerifyTarget && (
+            <div className="p-3 rounded-2xl bg-[#22F3A6]/10 border border-[#22F3A6]/40 flex flex-wrap items-center justify-between gap-2">
+              <div className="space-y-0.5 min-w-0">
+                <div className="text-[10px] font-mono uppercase text-[#22F3A6] flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Live Camera Verification Active • {verifyCapturedCount} live frames
+                </div>
+                <div className="text-xs font-bold text-white">
+                  Perform: <span className="text-[#22F3A6] font-mono">{cameraVerifyTarget.gloss}</span> ({cameraVerifyTarget.english})
+                </div>
+                <div className="text-[11px] text-slate-300 truncate">{cameraVerifyTarget.islNotes}</div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {verifyCapturedCount >= 4 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void submitCameraVerification(
+                        cameraVerifyTarget,
+                        Math.max(0.7, liveConfidence || 0.72),
+                        cameraVerifyPosesRef.current
+                      )
+                    }
+                    className="px-2.5 py-1.5 rounded-lg bg-[#22F3A6] text-slate-950 text-[11px] font-bold cursor-pointer"
+                  >
+                    Pass & Verify ({verifyCapturedCount}f)
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCameraVerifyTarget(null);
+                    cameraVerifyPosesRef.current = [];
+                    setVerifyCapturedCount(0);
+                  }}
+                  className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-200 cursor-pointer"
+                  title="Cancel verification"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="relative h-64 rounded-2xl overflow-hidden bg-[#0E131F] border border-white/10 flex items-center justify-center">
             {isCamOn ? (
               <>
@@ -547,13 +656,18 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
               <div className="text-center space-y-2 p-6">
                 <Hand className="w-8 h-8 text-slate-400 mx-auto" />
                 <p className="text-xs text-slate-400">
-                  Start the camera to test continuous multi-word ISL sentences or record kinematic samples.
+                  Start the camera to test continuous multi-word ISL sentences, verify signs, or record kinematic samples.
                 </p>
               </div>
             )}
             {isInferring && (
               <div className="absolute top-3 left-3 px-2.5 py-1 rounded-md bg-black/70 text-[#22F3A6] text-[11px] font-mono">
-                Analyzing continuous window…
+                Analyzing gesture boundary…
+              </div>
+            )}
+            {liveTelemetry && isCamOn && (
+              <div className="absolute bottom-2 left-2 right-2 px-2.5 py-1 rounded-md bg-black/65 text-[10px] font-mono text-slate-300 truncate">
+                {liveTelemetry}
               </div>
             )}
           </div>
@@ -567,15 +681,28 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
               </div>
             )}
             {clarifyMsg && (
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200">
-                <strong>Clarification:</strong> {clarifyMsg}
+              <div
+                className={`p-3 rounded-xl border text-xs ${
+                  isUnknownSign
+                    ? "bg-orange-500/10 border-orange-500/35 text-orange-200"
+                    : "bg-amber-500/10 border-amber-500/30 text-amber-200"
+                }`}
+              >
+                <strong>{isUnknownSign ? "Unknown Sign:" : "Clarification:"}</strong> {clarifyMsg}
+                {verifyMatchState === "mismatch" && cameraVerifyTarget && (
+                  <span className="block mt-1 text-[11px] text-slate-300">
+                    Detected "{liveGloss || "UNKNOWN"}" while testing {cameraVerifyTarget.gloss}. Try signing {cameraVerifyTarget.gloss} again clearly.
+                  </span>
+                )}
               </div>
             )}
             {liveSentence && (
               <div className="p-3.5 rounded-xl bg-[#22F3A6]/10 border border-[#22F3A6]/30 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-[10px] font-mono text-[#22F3A6] uppercase">
-                    {liveGloss || "ISL TRANSLATED"} {liveNonManual ? `• ${liveNonManual}` : ""}
+                    {liveGloss || "ISL TRANSLATED"}
+                    {liveConfidence !== null ? ` • ${Math.round(liveConfidence * 100)}%` : ""}
+                    {liveNonManual ? ` • ${liveNonManual}` : ""}
                   </div>
                   <div className="text-sm font-bold text-white mt-0.5">"{liveSentence}"</div>
                 </div>
@@ -712,14 +839,14 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
               type="submit"
               className="flex-1 h-10 rounded-xl bg-gradient-to-r from-[#8A5CF6] to-[#22F3A6] text-slate-950 font-bold text-xs cursor-pointer hover:opacity-95"
             >
-              Save & Verify Sign
+              Save & Test with Camera
             </button>
             <button
               type="button"
               onClick={(e) => void handleSaveContribution(e, false)}
               className="px-3 h-10 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold cursor-pointer"
             >
-              Save Draft
+              Save Sample
             </button>
           </div>
         </form>
@@ -756,9 +883,9 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
               className={`h-10 px-3 rounded-xl text-xs ${theme.styles.glassInput}`}
             >
               <option value="all" className="bg-[#151B29] text-white">All Statuses</option>
-              <option value="verified" className="bg-[#151B29] text-white">Verified Only</option>
-              <option value="community_review" className="bg-[#151B29] text-white">Community Review</option>
-              <option value="needs_samples" className="bg-[#151B29] text-white">Needs Samples</option>
+              <option value="verified" className="bg-[#151B29] text-white">Camera Verified</option>
+              <option value="trained_untested" className="bg-[#151B29] text-white">Trained (Untested)</option>
+              <option value="catalog_target" className="bg-[#151B29] text-white">Catalog Target</option>
             </select>
           </div>
         </div>
@@ -781,12 +908,16 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
                       className={`text-[10px] font-mono px-2 py-0.5 rounded-md border shrink-0 ${
                         item.verificationStatus === "verified"
                           ? "bg-[#22F3A6]/15 border-[#22F3A6]/35 text-[#22F3A6]"
-                          : item.verificationStatus === "community_review"
+                          : item.verificationStatus === "trained_untested"
                             ? "bg-amber-500/15 border-amber-500/35 text-amber-300"
                             : "bg-slate-500/15 border-slate-500/35 text-slate-300"
                       }`}
                     >
-                      {item.verificationStatus === "verified" ? "VERIFIED" : item.verificationStatus === "community_review" ? "REVIEW" : "NEEDS SAMPLES"}
+                      {item.verificationStatus === "verified"
+                        ? "CAMERA VERIFIED"
+                        : item.verificationStatus === "trained_untested"
+                          ? "TRAINED (UNTESTED)"
+                          : "CATALOG TARGET"}
                     </span>
                   </div>
                   <div className="text-sm font-semibold text-white">{item.english}</div>
@@ -812,17 +943,19 @@ export default function IslDatasetStudio({ profile }: IslDatasetStudioProps) {
                       }}
                       className="px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white cursor-pointer"
                     >
-                      Add Sample
+                      Record
                     </button>
-                    {item.verificationStatus !== "verified" && (
-                      <button
-                        type="button"
-                        onClick={() => void handleVerifySign(item.id)}
-                        className="px-2 py-1 rounded-md bg-[#22F3A6]/20 hover:bg-[#22F3A6]/30 text-[#22F3A6] font-semibold cursor-pointer"
-                      >
-                        Verify
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleStartCameraVerify(item)}
+                      className={`px-2 py-1 rounded-md font-semibold cursor-pointer ${
+                        cameraVerifyTarget?.id === item.id
+                          ? "bg-[#22F3A6] text-slate-950"
+                          : "bg-[#22F3A6]/20 hover:bg-[#22F3A6]/30 text-[#22F3A6]"
+                      }`}
+                    >
+                      {item.verificationStatus === "verified" ? "Retest Cam" : "Test with Camera"}
+                    </button>
                   </div>
                 </div>
               </div>

@@ -120,6 +120,50 @@ class TestTranslationPipeline(unittest.TestCase):
             s2v_srv.shutdown()
             s2v_srv.server_close()
 
+    def test_per_class_separation_left_hand_and_unknown_rejection(self) -> None:
+        from app.sign_to_voice.pose_to_text_3dcnn import _mirror_sequence
+
+        for gloss, spec in self.orchestrator.gloss_to_pose.signs.items():
+            res = self.orchestrator.sign_to_voice(pose_sequence=spec["keyframes"])
+            self.assertTrue(res["recognized"], f"Expected {gloss} to be recognized")
+            self.assertEqual(res["recognized_gloss"], gloss)
+            self.assertGreaterEqual(res["confidence"], 0.65)
+            if spec.get("handedness") == "one_hand":
+                left_res = self.orchestrator.sign_to_voice(pose_sequence=_mirror_sequence(spec["keyframes"]))
+                self.assertTrue(left_res["recognized"], f"Expected left-hand {gloss} to be recognized")
+                self.assertEqual(left_res["recognized_gloss"], gloss)
+
+        # Out-of-distribution arbitrary posture must return UNKNOWN rather than forcing NAME/HOSPITAL/FAMILY/EMERGENCY
+        unknown_pose = [
+            {
+                "t": 0.0,
+                "right_wrist": [0.92, 0.85, 0.4],
+                "left_wrist": [0.10, 0.15, 0.4],
+                "right_open": 0.5,
+                "left_open": 0.5,
+                "right_fingers": [1, 0, 1, 0, 1],
+                "left_fingers": [0, 1, 0, 1, 0],
+                "right_active": True,
+                "left_active": True,
+            },
+            {
+                "t": 1.0,
+                "right_wrist": [0.92, 0.85, 0.4],
+                "left_wrist": [0.10, 0.15, 0.4],
+                "right_open": 0.5,
+                "left_open": 0.5,
+                "right_fingers": [1, 0, 1, 0, 1],
+                "left_fingers": [0, 1, 0, 1, 0],
+                "right_active": True,
+                "left_active": True,
+            },
+        ]
+        unk = self.orchestrator.sign_to_voice(pose_sequence=unknown_pose)
+        self.assertFalse(unk["recognized"])
+        self.assertEqual(unk["recognized_gloss"], "UNKNOWN")
+        self.assertEqual(unk["status"], "unknown")
+        self.assertEqual(unk["text"], "")
+
 
 if __name__ == "__main__":
     unittest.main()

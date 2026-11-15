@@ -1,4 +1,4 @@
-"""Sign-Language-to-Pose keypoint extraction stage."""
+"""Sign-Language-to-Pose multimodal keypoint extraction stage."""
 
 from __future__ import annotations
 
@@ -15,8 +15,21 @@ except ImportError:
     np = None
 
 
+def _safe_float(val: Any, default: float) -> float:
+    try:
+        return float(val)
+    except (TypeError, ValueError):
+        return default
+
+
+def _normalize_fingers(raw: Any) -> list[float] | None:
+    if isinstance(raw, (list, tuple)) and len(raw) == 5:
+        return [max(0.0, min(1.0, _safe_float(v, 0.0))) for v in raw]
+    return None
+
+
 class PoseExtractor:
-    """Extracts skeletal pose & hand keypoints from RGB frames or validates landmark sequences."""
+    """Extracts skeletal pose, finger shapes & non-manual keypoints from RGB frames or validates landmark sequences."""
 
     def __init__(self):
         self._holistic = None
@@ -39,19 +52,59 @@ class PoseExtractor:
         width: int = 256,
         height: int = 256,
     ) -> dict[str, Any]:
-        # 1. If caller already supplied normalized pose keypoints (e.g. from mobile MediaPipe or test), normalize them
+        # 1. Client-supplied multimodal pose keyframes (MediaPipe browser / test harness)
         if pose_sequence and len(pose_sequence) > 0:
-            normalized = []
+            n = len(pose_sequence)
+            normalized: list[dict[str, Any]] = []
             for idx, frame in enumerate(pose_sequence):
-                rw = frame.get("right_wrist", [0.65, 0.4, 0.1])
-                lw = frame.get("left_wrist", [0.35, 0.7, 0.0])
+                rw = frame.get("right_wrist", [0.68, 0.60, 0.05])
+                lw = frame.get("left_wrist", [0.35, 0.72, 0.0])
+                r_vec = [
+                    _safe_float(rw[0], 0.68) if len(rw) > 0 else 0.68,
+                    _safe_float(rw[1], 0.60) if len(rw) > 1 else 0.60,
+                    _safe_float(rw[2], 0.0) if len(rw) > 2 else 0.0,
+                ]
+                l_vec = [
+                    _safe_float(lw[0], 0.35) if len(lw) > 0 else 0.35,
+                    _safe_float(lw[1], 0.72) if len(lw) > 1 else 0.72,
+                    _safe_float(lw[2], 0.0) if len(lw) > 2 else 0.0,
+                ]
+                r_open = _safe_float(frame.get("right_open"), 0.5)
+                l_open = _safe_float(frame.get("left_open"), 0.3)
+
+                r_fingers = _normalize_fingers(frame.get("right_fingers"))
+                l_fingers = _normalize_fingers(frame.get("left_fingers"))
+                has_fingers = r_fingers is not None or l_fingers is not None
+
+                # Infer active hands cleanly if caller did not explicitly provide flags
+                if "right_active" in frame:
+                    r_active = bool(frame["right_active"])
+                else:
+                    r_near_rest = abs(r_vec[0] - 0.68) < 0.02 and abs(r_vec[1] - 0.60) < 0.02
+                    r_active = not r_near_rest
+
+                if "left_active" in frame:
+                    l_active = bool(frame["left_active"])
+                else:
+                    l_near_rest = (abs(l_vec[0] - 0.35) < 0.03 and abs(l_vec[1] - 0.72) < 0.03) or (
+                        abs(l_vec[0] - 0.32) < 0.03 and abs(l_vec[1] - 0.68) < 0.03
+                    )
+                    l_active = (not l_near_rest) or (l_open >= 0.45)
+
                 normalized.append({
-                    "t": float(frame.get("t", idx / max(1, len(pose_sequence) - 1))),
-                    "right_wrist": [float(rw[0]), float(rw[1]), float(rw[2]) if len(rw) > 2 else 0.0],
-                    "left_wrist": [float(lw[0]), float(lw[1]), float(lw[2]) if len(lw) > 2 else 0.0],
-                    "right_open": float(frame.get("right_open", 0.8)),
-                    "left_open": float(frame.get("left_open", 0.3)),
-                    "elbow_angle": float(frame.get("elbow_angle", 70.0)),
+                    "t": _safe_float(frame.get("t"), idx / max(1, n - 1)),
+                    "right_wrist": r_vec,
+                    "left_wrist": l_vec,
+                    "right_open": r_open,
+                    "left_open": l_open,
+                    "elbow_angle": _safe_float(frame.get("elbow_angle"), 70.0),
+                    "left_elbow_angle": _safe_float(frame.get("left_elbow_angle"), 85.0),
+                    "right_fingers": r_fingers,
+                    "left_fingers": l_fingers,
+                    "has_fingers": has_fingers,
+                    "right_active": r_active,
+                    "left_active": l_active,
+                    "facial_cues": frame.get("facial_cues") or {},
                 })
             return {
                 "frame_count": len(normalized),
@@ -59,7 +112,7 @@ class PoseExtractor:
                 "keypoints": normalized,
             }
 
-        # 2. Extract from raw RGB24 frames (MediaPipe Holistic if installed, else pure-Python brightness/centroid tracker)
+        # 2. Extract from raw RGB24 frames (MediaPipe Holistic if installed, else color/motion centroid)
         if video_frames_rgb and len(video_frames_rgb) > 0:
             keypoints: list[dict[str, Any]] = []
             for idx, frame_bytes in enumerate(video_frames_rgb):
@@ -71,7 +124,7 @@ class PoseExtractor:
                 "keypoints": keypoints,
             }
 
-        # 3. Extract from base64-encoded raw RGB or image payload
+        # 3. Extract from base64-encoded raw RGB payload
         if video_base64:
             payload = video_base64.split(",", 1)[-1]
             decoded = base64.b64decode(payload)
@@ -80,15 +133,11 @@ class PoseExtractor:
                 chunks = [decoded[i : i + frame_size] for i in range(0, len(decoded) - frame_size + 1, frame_size)]
                 return self.extract(video_frames_rgb=chunks[:24], width=width, height=height)
 
-        # Default neutral pose fallback
+        # Idle empty pose when no landmarks or video were supplied
         return {
-            "frame_count": 3,
-            "source": "fallback-neutral",
-            "keypoints": [
-                {"t": 0.0, "right_wrist": [0.68, 0.34, 0.05], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.4, "elbow_angle": 45.0},
-                {"t": 0.5, "right_wrist": [0.76, 0.24, 0.12], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.4, "elbow_angle": 75.0},
-                {"t": 1.0, "right_wrist": [0.84, 0.28, 0.15], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.4, "elbow_angle": 90.0},
-            ],
+            "frame_count": 0,
+            "source": "empty-input",
+            "keypoints": [],
         }
 
     def _extract_from_rgb_bytes(
@@ -114,12 +163,18 @@ class PoseExtractor:
                         "right_open": 0.8 if res.right_hand_landmarks else 0.3,
                         "left_open": 0.8 if res.left_hand_landmarks else 0.3,
                         "elbow_angle": 70.0,
+                        "left_elbow_angle": 70.0,
+                        "right_fingers": None,
+                        "left_fingers": None,
+                        "has_fingers": False,
+                        "right_active": bool(res.right_hand_landmarks),
+                        "left_active": bool(res.left_hand_landmarks),
                     }
             except Exception:
                 pass
 
-        # Pure-Python spatial centroid over high-luminance pixels (left/right half)
-        stride = max(1, (width * height) // 1024)
+        # Pure-Python spatial centroid over avatar hand colors (right x > 0.52, left x < 0.48) or bright foreground
+        stride = max(1, (width * height) // 8192)
         rx_sum = ry_sum = r_cnt = 0.0
         lx_sum = ly_sum = l_cnt = 0.0
         expected = width * height * 3
@@ -127,26 +182,46 @@ class PoseExtractor:
             for p in range(0, width * height, stride):
                 off = p * 3
                 r, g, b = frame_bytes[off], frame_bytes[off + 1], frame_bytes[off + 2]
-                lum = r + g + b
-                if lum > 220:
-                    x = (p % width) / width
-                    y = (p // width) / height
-                    if x >= 0.5:
+                x = (p % width) / width
+                y = (p // width) / height
+                # PoseToVideoRenderer right-hand finger rays (167, 243, 208) & cyan forearm/hand (34, 211, 238)
+                is_finger_ray = abs(r - 167) <= 8 and abs(g - 243) <= 8 and abs(b - 208) <= 8
+                is_cyan_arm = abs(r - 34) <= 6 and abs(g - 211) <= 6 and abs(b - 238) <= 6
+                is_emerald_arm = abs(r - 52) <= 6 and abs(g - 211) <= 6 and abs(b - 153) <= 6
+
+                if is_finger_ray or (is_cyan_arm and x >= 0.52):
+                    rx_sum += x
+                    ry_sum += y
+                    r_cnt += 1
+                elif (is_cyan_arm or is_emerald_arm) and x <= 0.48:
+                    lx_sum += x
+                    ly_sum += y
+                    l_cnt += 1
+                elif (r + g + b) > 360:
+                    if x >= 0.52:
                         rx_sum += x
                         ry_sum += y
                         r_cnt += 1
-                    else:
+                    elif x <= 0.48:
                         lx_sum += x
                         ly_sum += y
                         l_cnt += 1
 
-        rw = [round(rx_sum / r_cnt, 4), round(ry_sum / r_cnt, 4), 0.12] if r_cnt else [0.68, 0.34, 0.1]
-        lw = [round(lx_sum / l_cnt, 4), round(ly_sum / l_cnt, 4), 0.05] if l_cnt else [0.35, 0.72, 0.0]
+        r_active = r_cnt >= 3
+        l_active = l_cnt >= 3
+        rw = [round(rx_sum / r_cnt, 4), round(ry_sum / r_cnt, 4), 0.16] if r_active else [0.68, 0.60, 0.05]
+        lw = [round(lx_sum / l_cnt, 4), round(ly_sum / l_cnt, 4), 0.16] if l_active else [0.35, 0.72, 0.0]
         return {
             "t": round(idx / max(1, total - 1), 3),
             "right_wrist": rw,
             "left_wrist": lw,
-            "right_open": min(1.0, r_cnt / 40.0) if r_cnt else 0.5,
-            "left_open": min(1.0, l_cnt / 40.0) if l_cnt else 0.3,
-            "elbow_angle": 70.0,
+            "right_open": min(1.0, max(0.35, r_cnt / 45.0)) if r_active else 0.3,
+            "left_open": min(1.0, max(0.35, l_cnt / 45.0)) if l_active else 0.3,
+            "elbow_angle": round(max(30.0, min(125.0, 115.0 - rw[1] * 80.0)), 1),
+            "left_elbow_angle": round(max(30.0, min(125.0, 115.0 - lw[1] * 80.0)), 1),
+            "right_fingers": None,
+            "left_fingers": None,
+            "has_fingers": False,
+            "right_active": r_active,
+            "left_active": l_active,
         }

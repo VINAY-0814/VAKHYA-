@@ -1,360 +1,392 @@
 {
   "metadata": {
-    "name": "VAKHYA Demonstrative Sign Vocabulary",
-    "version": "1.0.0",
-    "scope": "Demonstrative lookup-based vocabulary for prototype bidirectional translation",
-    "supported_languages": ["ASL", "ISL"]
+    "name": "VAKHYA Multimodal Sign Vocabulary",
+    "version": "2.0.0",
+    "scope": "32 kinematically calibrated ISL/ASL core signs with finger shapes, handedness, trajectories, and non-manual markers",
+    "supported_languages": ["ISL", "ASL"]
   },
   "signs": {
     "HELLO": {
       "english": "Hello",
       "category": "greeting",
+      "handedness": "one_hand",
       "duration_ms": 900,
       "non_manual": { "eyebrows": "up", "mouth": "smile", "headTilt": "none" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.68, 0.34, 0.05], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.4, "elbow_angle": 45 },
-        { "t": 0.5, "right_wrist": [0.76, 0.24, 0.12], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.4, "elbow_angle": 75 },
-        { "t": 1.0, "right_wrist": [0.84, 0.28, 0.15], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.4, "elbow_angle": 90 }
+        { "t": 0.0, "right_wrist": [0.68, 0.30, 0.05], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.3, "elbow_angle": 45, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 0.5, "right_wrist": [0.76, 0.22, 0.12], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.3, "elbow_angle": 75, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 1.0, "right_wrist": [0.85, 0.25, 0.15], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.3, "elbow_angle": 90, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false }
       ]
     },
     "GOODBYE": {
       "english": "Goodbye",
       "category": "greeting",
+      "handedness": "one_hand",
       "duration_ms": 950,
       "non_manual": { "eyebrows": "up", "mouth": "smile", "headTilt": "none" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.74, 0.30, 0.10], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.4, "elbow_angle": 80 },
-        { "t": 0.5, "right_wrist": [0.74, 0.32, 0.12], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.2, "left_open": 0.4, "elbow_angle": 80 },
-        { "t": 1.0, "right_wrist": [0.74, 0.30, 0.10], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.4, "elbow_angle": 80 }
+        { "t": 0.0, "right_wrist": [0.74, 0.28, 0.10], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.3, "elbow_angle": 80, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 0.5, "right_wrist": [0.74, 0.31, 0.12], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.0, "left_open": 0.3, "elbow_angle": 80, "right_fingers": [0, 0, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 1.0, "right_wrist": [0.74, 0.28, 0.10], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.3, "elbow_angle": 80, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false }
       ]
     },
     "PLEASE": {
       "english": "Please",
       "category": "courtesy",
+      "handedness": "one_hand",
       "duration_ms": 850,
       "non_manual": { "eyebrows": "neutral", "mouth": "idle", "headTilt": "forward" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.52, 0.48, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.3, "elbow_angle": 60 },
-        { "t": 0.5, "right_wrist": [0.46, 0.52, 0.10], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.3, "elbow_angle": 55 },
-        { "t": 1.0, "right_wrist": [0.54, 0.46, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.3, "elbow_angle": 65 }
+        { "t": 0.0, "right_wrist": [0.52, 0.50, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.8, "left_open": 0.3, "elbow_angle": 60, "right_fingers": [0, 1, 1, 1, 1], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 0.5, "right_wrist": [0.46, 0.55, 0.10], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.8, "left_open": 0.3, "elbow_angle": 55, "right_fingers": [0, 1, 1, 1, 1], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 1.0, "right_wrist": [0.54, 0.48, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.8, "left_open": 0.3, "elbow_angle": 65, "right_fingers": [0, 1, 1, 1, 1], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false }
       ]
     },
     "THANK_YOU": {
       "english": "Thank you",
       "category": "courtesy",
+      "handedness": "one_hand",
       "duration_ms": 850,
       "non_manual": { "eyebrows": "up", "mouth": "smile", "headTilt": "forward" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.52, 0.28, 0.06], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.3, "elbow_angle": 40 },
-        { "t": 0.5, "right_wrist": [0.58, 0.38, 0.18], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.3, "elbow_angle": 70 },
-        { "t": 1.0, "right_wrist": [0.64, 0.46, 0.26], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.3, "elbow_angle": 95 }
+        { "t": 0.0, "right_wrist": [0.52, 0.28, 0.06], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.3, "elbow_angle": 40, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 0.5, "right_wrist": [0.58, 0.39, 0.18], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.3, "elbow_angle": 70, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 1.0, "right_wrist": [0.64, 0.48, 0.28], "left_wrist": [0.35, 0.72, 0.0], "right_open": 1.0, "left_open": 0.3, "elbow_angle": 95, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false }
       ]
     },
     "YES": {
       "english": "Yes",
       "category": "response",
+      "handedness": "one_hand",
       "duration_ms": 700,
       "non_manual": { "eyebrows": "neutral", "mouth": "idle", "headTilt": "forward" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.66, 0.42, 0.14], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.0, "left_open": 0.3, "elbow_angle": 70 },
-        { "t": 0.5, "right_wrist": [0.66, 0.50, 0.16], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.0, "left_open": 0.3, "elbow_angle": 85 },
-        { "t": 1.0, "right_wrist": [0.66, 0.42, 0.14], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.0, "left_open": 0.3, "elbow_angle": 70 }
+        { "t": 0.0, "right_wrist": [0.68, 0.40, 0.14], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.0, "left_open": 0.3, "elbow_angle": 70, "right_fingers": [0, 0, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 0.5, "right_wrist": [0.68, 0.52, 0.18], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.0, "left_open": 0.3, "elbow_angle": 85, "right_fingers": [0, 0, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 1.0, "right_wrist": [0.68, 0.40, 0.14], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.0, "left_open": 0.3, "elbow_angle": 70, "right_fingers": [0, 0, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false }
       ]
     },
     "NO": {
       "english": "No",
       "category": "response",
+      "handedness": "one_hand",
       "duration_ms": 700,
       "non_manual": { "eyebrows": "down", "mouth": "idle", "headTilt": "left" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.66, 0.40, 0.15], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.6, "left_open": 0.3, "elbow_angle": 75 },
-        { "t": 0.5, "right_wrist": [0.66, 0.40, 0.15], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.1, "left_open": 0.3, "elbow_angle": 75 },
-        { "t": 1.0, "right_wrist": [0.66, 0.40, 0.15], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.1, "left_open": 0.3, "elbow_angle": 75 }
+        { "t": 0.0, "right_wrist": [0.68, 0.38, 0.15], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.6, "left_open": 0.3, "elbow_angle": 75, "right_fingers": [1, 1, 1, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 0.5, "right_wrist": [0.68, 0.38, 0.15], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.0, "left_open": 0.3, "elbow_angle": 75, "right_fingers": [0, 0, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 1.0, "right_wrist": [0.68, 0.38, 0.15], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.0, "left_open": 0.3, "elbow_angle": 75, "right_fingers": [0, 0, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false }
       ]
     },
     "HELP": {
       "english": "Help",
       "category": "emergency",
+      "handedness": "two_hand",
       "duration_ms": 900,
       "non_manual": { "eyebrows": "down", "mouth": "open", "headTilt": "forward" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.54, 0.58, 0.12], "left_wrist": [0.46, 0.60, 0.12], "right_open": 0.1, "left_open": 1.0, "elbow_angle": 65 },
-        { "t": 0.5, "right_wrist": [0.54, 0.48, 0.14], "left_wrist": [0.46, 0.50, 0.14], "right_open": 0.1, "left_open": 1.0, "elbow_angle": 50 },
-        { "t": 1.0, "right_wrist": [0.54, 0.40, 0.16], "left_wrist": [0.46, 0.42, 0.16], "right_open": 0.1, "left_open": 1.0, "elbow_angle": 40 }
+        { "t": 0.0, "right_wrist": [0.54, 0.60, 0.12], "left_wrist": [0.46, 0.62, 0.12], "right_open": 0.2, "left_open": 1.0, "elbow_angle": 65, "right_fingers": [1, 0, 0, 0, 0], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 0.5, "right_wrist": [0.54, 0.48, 0.14], "left_wrist": [0.46, 0.50, 0.14], "right_open": 0.2, "left_open": 1.0, "elbow_angle": 50, "right_fingers": [1, 0, 0, 0, 0], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 1.0, "right_wrist": [0.54, 0.36, 0.16], "left_wrist": [0.46, 0.38, 0.16], "right_open": 0.2, "left_open": 1.0, "elbow_angle": 40, "right_fingers": [1, 0, 0, 0, 0], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true }
       ]
     },
     "EMERGENCY": {
       "english": "Emergency",
       "category": "emergency",
+      "handedness": "two_hand",
       "duration_ms": 850,
       "non_manual": { "eyebrows": "down", "mouth": "open", "headTilt": "forward" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.72, 0.36, 0.16], "left_wrist": [0.28, 0.36, 0.16], "right_open": 0.8, "left_open": 0.8, "elbow_angle": 85 },
-        { "t": 0.5, "right_wrist": [0.62, 0.32, 0.20], "left_wrist": [0.38, 0.32, 0.20], "right_open": 0.8, "left_open": 0.8, "elbow_angle": 65 },
-        { "t": 1.0, "right_wrist": [0.72, 0.36, 0.16], "left_wrist": [0.28, 0.36, 0.16], "right_open": 0.8, "left_open": 0.8, "elbow_angle": 85 }
+        { "t": 0.0, "right_wrist": [0.76, 0.34, 0.16], "left_wrist": [0.24, 0.34, 0.16], "right_open": 0.8, "left_open": 0.8, "elbow_angle": 85, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 0.5, "right_wrist": [0.64, 0.30, 0.22], "left_wrist": [0.36, 0.30, 0.22], "right_open": 0.8, "left_open": 0.8, "elbow_angle": 65, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 1.0, "right_wrist": [0.76, 0.34, 0.16], "left_wrist": [0.24, 0.34, 0.16], "right_open": 0.8, "left_open": 0.8, "elbow_angle": 85, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true }
       ]
     },
     "DOCTOR": {
       "english": "Doctor",
       "category": "medical",
+      "handedness": "two_hand",
       "duration_ms": 900,
       "non_manual": { "eyebrows": "neutral", "mouth": "idle", "headTilt": "none" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.48, 0.54, 0.14], "left_wrist": [0.42, 0.58, 0.14], "right_open": 0.5, "left_open": 0.9, "elbow_angle": 60 },
-        { "t": 0.5, "right_wrist": [0.44, 0.57, 0.14], "left_wrist": [0.42, 0.58, 0.14], "right_open": 0.5, "left_open": 0.9, "elbow_angle": 55 },
-        { "t": 1.0, "right_wrist": [0.48, 0.54, 0.14], "left_wrist": [0.42, 0.58, 0.14], "right_open": 0.5, "left_open": 0.9, "elbow_angle": 60 }
+        { "t": 0.0, "right_wrist": [0.46, 0.55, 0.14], "left_wrist": [0.40, 0.59, 0.14], "right_open": 0.6, "left_open": 1.0, "elbow_angle": 60, "right_fingers": [1, 1, 1, 0, 0], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 0.5, "right_wrist": [0.41, 0.58, 0.14], "left_wrist": [0.40, 0.59, 0.14], "right_open": 0.6, "left_open": 1.0, "elbow_angle": 55, "right_fingers": [1, 1, 1, 0, 0], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 1.0, "right_wrist": [0.46, 0.55, 0.14], "left_wrist": [0.40, 0.59, 0.14], "right_open": 0.6, "left_open": 1.0, "elbow_angle": 60, "right_fingers": [1, 1, 1, 0, 0], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true }
       ]
     },
     "HOSPITAL": {
       "english": "Hospital",
       "category": "medical",
+      "handedness": "one_hand",
       "duration_ms": 950,
       "non_manual": { "eyebrows": "neutral", "mouth": "idle", "headTilt": "none" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.32, 0.38, 0.08], "left_wrist": [0.30, 0.70, 0.0], "right_open": 0.4, "left_open": 0.3, "elbow_angle": 50 },
-        { "t": 0.5, "right_wrist": [0.32, 0.46, 0.08], "left_wrist": [0.30, 0.70, 0.0], "right_open": 0.4, "left_open": 0.3, "elbow_angle": 55 },
-        { "t": 1.0, "right_wrist": [0.28, 0.42, 0.08], "left_wrist": [0.30, 0.70, 0.0], "right_open": 0.4, "left_open": 0.3, "elbow_angle": 50 }
+        { "t": 0.0, "right_wrist": [0.28, 0.36, 0.08], "left_wrist": [0.30, 0.72, 0.0], "right_open": 0.4, "left_open": 0.3, "elbow_angle": 50, "right_fingers": [0, 1, 1, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 0.5, "right_wrist": [0.28, 0.46, 0.08], "left_wrist": [0.30, 0.72, 0.0], "right_open": 0.4, "left_open": 0.3, "elbow_angle": 55, "right_fingers": [0, 1, 1, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 1.0, "right_wrist": [0.23, 0.41, 0.08], "left_wrist": [0.30, 0.72, 0.0], "right_open": 0.4, "left_open": 0.3, "elbow_angle": 50, "right_fingers": [0, 1, 1, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false }
       ]
     },
     "PAIN": {
       "english": "Pain",
       "category": "medical",
+      "handedness": "two_hand",
       "duration_ms": 850,
       "non_manual": { "eyebrows": "down", "mouth": "open", "headTilt": "left" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.58, 0.48, 0.15], "left_wrist": [0.42, 0.48, 0.15], "right_open": 0.3, "left_open": 0.3, "elbow_angle": 65 },
-        { "t": 0.5, "right_wrist": [0.53, 0.48, 0.17], "left_wrist": [0.47, 0.48, 0.17], "right_open": 0.3, "left_open": 0.3, "elbow_angle": 60 },
-        { "t": 1.0, "right_wrist": [0.58, 0.48, 0.15], "left_wrist": [0.42, 0.48, 0.15], "right_open": 0.3, "left_open": 0.3, "elbow_angle": 65 }
+        { "t": 0.0, "right_wrist": [0.60, 0.48, 0.15], "left_wrist": [0.40, 0.48, 0.15], "right_open": 0.2, "left_open": 0.2, "elbow_angle": 65, "right_fingers": [0, 1, 0, 0, 0], "left_fingers": [0, 1, 0, 0, 0], "right_active": true, "left_active": true },
+        { "t": 0.5, "right_wrist": [0.53, 0.48, 0.17], "left_wrist": [0.47, 0.48, 0.17], "right_open": 0.2, "left_open": 0.2, "elbow_angle": 60, "right_fingers": [0, 1, 0, 0, 0], "left_fingers": [0, 1, 0, 0, 0], "right_active": true, "left_active": true },
+        { "t": 1.0, "right_wrist": [0.60, 0.48, 0.15], "left_wrist": [0.40, 0.48, 0.15], "right_open": 0.2, "left_open": 0.2, "elbow_angle": 65, "right_fingers": [0, 1, 0, 0, 0], "left_fingers": [0, 1, 0, 0, 0], "right_active": true, "left_active": true }
       ]
     },
     "MEDICINE": {
       "english": "Medicine",
       "category": "medical",
+      "handedness": "two_hand",
       "duration_ms": 900,
       "non_manual": { "eyebrows": "neutral", "mouth": "idle", "headTilt": "none" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.50, 0.52, 0.12], "left_wrist": [0.45, 0.56, 0.12], "right_open": 0.4, "left_open": 1.0, "elbow_angle": 60 },
-        { "t": 0.5, "right_wrist": [0.47, 0.55, 0.13], "left_wrist": [0.45, 0.56, 0.12], "right_open": 0.4, "left_open": 1.0, "elbow_angle": 55 },
-        { "t": 1.0, "right_wrist": [0.50, 0.52, 0.12], "left_wrist": [0.45, 0.56, 0.12], "right_open": 0.4, "left_open": 1.0, "elbow_angle": 60 }
+        { "t": 0.0, "right_wrist": [0.51, 0.52, 0.12], "left_wrist": [0.45, 0.57, 0.12], "right_open": 0.2, "left_open": 1.0, "elbow_angle": 60, "right_fingers": [0, 0, 1, 0, 0], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 0.5, "right_wrist": [0.47, 0.56, 0.13], "left_wrist": [0.45, 0.57, 0.12], "right_open": 0.2, "left_open": 1.0, "elbow_angle": 55, "right_fingers": [0, 0, 1, 0, 0], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 1.0, "right_wrist": [0.51, 0.52, 0.12], "left_wrist": [0.45, 0.57, 0.12], "right_open": 0.2, "left_open": 1.0, "elbow_angle": 60, "right_fingers": [0, 0, 1, 0, 0], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true }
       ]
     },
     "WATER": {
       "english": "Water",
       "category": "daily",
+      "handedness": "one_hand",
       "duration_ms": 800,
       "non_manual": { "eyebrows": "neutral", "mouth": "idle", "headTilt": "none" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.52, 0.30, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.6, "left_open": 0.3, "elbow_angle": 45 },
-        { "t": 0.5, "right_wrist": [0.50, 0.28, 0.06], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.6, "left_open": 0.3, "elbow_angle": 40 },
-        { "t": 1.0, "right_wrist": [0.52, 0.30, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.6, "left_open": 0.3, "elbow_angle": 45 }
+        { "t": 0.0, "right_wrist": [0.52, 0.30, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.6, "left_open": 0.3, "elbow_angle": 45, "right_fingers": [0, 1, 1, 1, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 0.5, "right_wrist": [0.50, 0.28, 0.06], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.6, "left_open": 0.3, "elbow_angle": 40, "right_fingers": [0, 1, 1, 1, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 1.0, "right_wrist": [0.52, 0.30, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.6, "left_open": 0.3, "elbow_angle": 45, "right_fingers": [0, 1, 1, 1, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false }
       ]
     },
     "FOOD": {
       "english": "Food",
       "category": "daily",
+      "handedness": "one_hand",
       "duration_ms": 800,
       "non_manual": { "eyebrows": "neutral", "mouth": "idle", "headTilt": "none" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.56, 0.36, 0.10], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.2, "left_open": 0.3, "elbow_angle": 55 },
-        { "t": 0.5, "right_wrist": [0.50, 0.27, 0.06], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.2, "left_open": 0.3, "elbow_angle": 40 },
-        { "t": 1.0, "right_wrist": [0.56, 0.36, 0.10], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.2, "left_open": 0.3, "elbow_angle": 55 }
+        { "t": 0.0, "right_wrist": [0.57, 0.37, 0.12], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.2, "left_open": 0.3, "elbow_angle": 55, "right_fingers": [1, 0, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 0.5, "right_wrist": [0.50, 0.27, 0.06], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.2, "left_open": 0.3, "elbow_angle": 40, "right_fingers": [1, 0, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 1.0, "right_wrist": [0.57, 0.37, 0.12], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.2, "left_open": 0.3, "elbow_angle": 55, "right_fingers": [1, 0, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false }
       ]
     },
     "FAMILY": {
       "english": "Family",
       "category": "social",
+      "handedness": "two_hand",
       "duration_ms": 950,
       "non_manual": { "eyebrows": "up", "mouth": "smile", "headTilt": "none" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.54, 0.44, 0.14], "left_wrist": [0.46, 0.44, 0.14], "right_open": 0.7, "left_open": 0.7, "elbow_angle": 65 },
-        { "t": 0.5, "right_wrist": [0.68, 0.44, 0.20], "left_wrist": [0.32, 0.44, 0.20], "right_open": 0.7, "left_open": 0.7, "elbow_angle": 85 },
-        { "t": 1.0, "right_wrist": [0.54, 0.44, 0.24], "left_wrist": [0.46, 0.44, 0.24], "right_open": 0.7, "left_open": 0.7, "elbow_angle": 75 }
+        { "t": 0.0, "right_wrist": [0.54, 0.44, 0.14], "left_wrist": [0.46, 0.44, 0.14], "right_open": 0.6, "left_open": 0.6, "elbow_angle": 65, "right_fingers": [0, 0, 1, 1, 1], "left_fingers": [0, 0, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 0.5, "right_wrist": [0.70, 0.44, 0.20], "left_wrist": [0.30, 0.44, 0.20], "right_open": 0.6, "left_open": 0.6, "elbow_angle": 85, "right_fingers": [0, 0, 1, 1, 1], "left_fingers": [0, 0, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 1.0, "right_wrist": [0.54, 0.44, 0.26], "left_wrist": [0.46, 0.44, 0.26], "right_open": 0.6, "left_open": 0.6, "elbow_angle": 75, "right_fingers": [0, 0, 1, 1, 1], "left_fingers": [0, 0, 1, 1, 1], "right_active": true, "left_active": true }
       ]
     },
     "FRIEND": {
       "english": "Friend",
       "category": "social",
+      "handedness": "two_hand",
       "duration_ms": 850,
       "non_manual": { "eyebrows": "up", "mouth": "smile", "headTilt": "none" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.54, 0.50, 0.14], "left_wrist": [0.46, 0.50, 0.14], "right_open": 0.3, "left_open": 0.3, "elbow_angle": 65 },
-        { "t": 0.5, "right_wrist": [0.48, 0.52, 0.16], "left_wrist": [0.52, 0.48, 0.16], "right_open": 0.3, "left_open": 0.3, "elbow_angle": 60 },
-        { "t": 1.0, "right_wrist": [0.54, 0.50, 0.14], "left_wrist": [0.46, 0.50, 0.14], "right_open": 0.3, "left_open": 0.3, "elbow_angle": 65 }
+        { "t": 0.0, "right_wrist": [0.54, 0.52, 0.14], "left_wrist": [0.46, 0.52, 0.14], "right_open": 0.2, "left_open": 0.2, "elbow_angle": 65, "right_fingers": [0, 1, 0, 0, 0], "left_fingers": [0, 1, 0, 0, 0], "right_active": true, "left_active": true },
+        { "t": 0.5, "right_wrist": [0.47, 0.55, 0.16], "left_wrist": [0.53, 0.49, 0.16], "right_open": 0.2, "left_open": 0.2, "elbow_angle": 60, "right_fingers": [0, 1, 0, 0, 0], "left_fingers": [0, 1, 0, 0, 0], "right_active": true, "left_active": true },
+        { "t": 1.0, "right_wrist": [0.54, 0.52, 0.14], "left_wrist": [0.46, 0.52, 0.14], "right_open": 0.2, "left_open": 0.2, "elbow_angle": 65, "right_fingers": [0, 1, 0, 0, 0], "left_fingers": [0, 1, 0, 0, 0], "right_active": true, "left_active": true }
       ]
     },
     "NAME": {
       "english": "Name",
       "category": "identity",
+      "handedness": "two_hand",
       "duration_ms": 800,
       "non_manual": { "eyebrows": "neutral", "mouth": "idle", "headTilt": "none" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.56, 0.46, 0.14], "left_wrist": [0.44, 0.50, 0.14], "right_open": 0.4, "left_open": 0.4, "elbow_angle": 65 },
-        { "t": 0.5, "right_wrist": [0.52, 0.49, 0.14], "left_wrist": [0.44, 0.50, 0.14], "right_open": 0.4, "left_open": 0.4, "elbow_angle": 60 },
-        { "t": 1.0, "right_wrist": [0.56, 0.46, 0.14], "left_wrist": [0.44, 0.50, 0.14], "right_open": 0.4, "left_open": 0.4, "elbow_angle": 65 }
+        { "t": 0.0, "right_wrist": [0.56, 0.44, 0.14], "left_wrist": [0.44, 0.50, 0.14], "right_open": 0.4, "left_open": 0.4, "elbow_angle": 65, "right_fingers": [0, 1, 1, 0, 0], "left_fingers": [0, 1, 1, 0, 0], "right_active": true, "left_active": true },
+        { "t": 0.5, "right_wrist": [0.51, 0.48, 0.14], "left_wrist": [0.44, 0.50, 0.14], "right_open": 0.4, "left_open": 0.4, "elbow_angle": 60, "right_fingers": [0, 1, 1, 0, 0], "left_fingers": [0, 1, 1, 0, 0], "right_active": true, "left_active": true },
+        { "t": 1.0, "right_wrist": [0.56, 0.44, 0.14], "left_wrist": [0.44, 0.50, 0.14], "right_open": 0.4, "left_open": 0.4, "elbow_angle": 65, "right_fingers": [0, 1, 1, 0, 0], "left_fingers": [0, 1, 1, 0, 0], "right_active": true, "left_active": true }
       ]
     },
     "WHAT": {
       "english": "What",
       "category": "question",
+      "handedness": "two_hand",
       "duration_ms": 750,
       "non_manual": { "eyebrows": "down", "mouth": "open", "headTilt": "forward" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.64, 0.50, 0.18], "left_wrist": [0.36, 0.50, 0.18], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 85 },
-        { "t": 0.5, "right_wrist": [0.70, 0.50, 0.18], "left_wrist": [0.30, 0.50, 0.18], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 90 },
-        { "t": 1.0, "right_wrist": [0.64, 0.50, 0.18], "left_wrist": [0.36, 0.50, 0.18], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 85 }
+        { "t": 0.0, "right_wrist": [0.64, 0.52, 0.18], "left_wrist": [0.36, 0.52, 0.18], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 85, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 0.5, "right_wrist": [0.74, 0.52, 0.18], "left_wrist": [0.26, 0.52, 0.18], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 90, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 1.0, "right_wrist": [0.64, 0.52, 0.18], "left_wrist": [0.36, 0.52, 0.18], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 85, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true }
       ]
     },
     "WHERE": {
       "english": "Where",
       "category": "question",
+      "handedness": "one_hand",
       "duration_ms": 750,
       "non_manual": { "eyebrows": "down", "mouth": "open", "headTilt": "forward" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.68, 0.40, 0.16], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.25, "left_open": 0.3, "elbow_angle": 75 },
-        { "t": 0.5, "right_wrist": [0.74, 0.40, 0.16], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.25, "left_open": 0.3, "elbow_angle": 80 },
-        { "t": 1.0, "right_wrist": [0.64, 0.40, 0.16], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.25, "left_open": 0.3, "elbow_angle": 70 }
+        { "t": 0.0, "right_wrist": [0.70, 0.36, 0.16], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.2, "left_open": 0.3, "elbow_angle": 75, "right_fingers": [0, 1, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 0.5, "right_wrist": [0.79, 0.36, 0.16], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.2, "left_open": 0.3, "elbow_angle": 80, "right_fingers": [0, 1, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 1.0, "right_wrist": [0.63, 0.36, 0.16], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.2, "left_open": 0.3, "elbow_angle": 70, "right_fingers": [0, 1, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false }
       ]
     },
     "HOW": {
       "english": "How",
       "category": "question",
+      "handedness": "two_hand",
       "duration_ms": 800,
       "non_manual": { "eyebrows": "down", "mouth": "idle", "headTilt": "forward" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.54, 0.52, 0.14], "left_wrist": [0.46, 0.52, 0.14], "right_open": 0.5, "left_open": 0.5, "elbow_angle": 70 },
-        { "t": 0.5, "right_wrist": [0.60, 0.48, 0.18], "left_wrist": [0.40, 0.48, 0.18], "right_open": 0.9, "left_open": 0.9, "elbow_angle": 80 },
-        { "t": 1.0, "right_wrist": [0.62, 0.50, 0.20], "left_wrist": [0.38, 0.50, 0.20], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 85 }
+        { "t": 0.0, "right_wrist": [0.54, 0.54, 0.14], "left_wrist": [0.46, 0.54, 0.14], "right_open": 0.0, "left_open": 0.0, "elbow_angle": 70, "right_fingers": [0, 0, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": true },
+        { "t": 0.5, "right_wrist": [0.60, 0.49, 0.18], "left_wrist": [0.40, 0.49, 0.18], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 80, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 1.0, "right_wrist": [0.63, 0.50, 0.20], "left_wrist": [0.37, 0.50, 0.20], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 85, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true }
       ]
     },
     "YOU": {
       "english": "You",
       "category": "pronoun",
+      "handedness": "one_hand",
       "duration_ms": 600,
       "non_manual": { "eyebrows": "neutral", "mouth": "idle", "headTilt": "none" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.58, 0.48, 0.12], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.25, "left_open": 0.3, "elbow_angle": 65 },
-        { "t": 0.5, "right_wrist": [0.58, 0.46, 0.26], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.25, "left_open": 0.3, "elbow_angle": 95 },
-        { "t": 1.0, "right_wrist": [0.58, 0.48, 0.20], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.25, "left_open": 0.3, "elbow_angle": 80 }
+        { "t": 0.0, "right_wrist": [0.58, 0.48, 0.10], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.2, "left_open": 0.3, "elbow_angle": 65, "right_fingers": [0, 1, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 0.5, "right_wrist": [0.58, 0.46, 0.28], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.2, "left_open": 0.3, "elbow_angle": 95, "right_fingers": [0, 1, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 1.0, "right_wrist": [0.58, 0.48, 0.24], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.2, "left_open": 0.3, "elbow_angle": 85, "right_fingers": [0, 1, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false }
       ]
     },
     "ME": {
       "english": "Me",
       "category": "pronoun",
+      "handedness": "one_hand",
       "duration_ms": 600,
       "non_manual": { "eyebrows": "neutral", "mouth": "idle", "headTilt": "none" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.58, 0.50, 0.16], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.25, "left_open": 0.3, "elbow_angle": 70 },
-        { "t": 0.5, "right_wrist": [0.50, 0.46, 0.06], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.25, "left_open": 0.3, "elbow_angle": 45 },
-        { "t": 1.0, "right_wrist": [0.52, 0.48, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.25, "left_open": 0.3, "elbow_angle": 50 }
+        { "t": 0.0, "right_wrist": [0.60, 0.50, 0.16], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.2, "left_open": 0.3, "elbow_angle": 70, "right_fingers": [0, 1, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 0.5, "right_wrist": [0.49, 0.48, 0.04], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.2, "left_open": 0.3, "elbow_angle": 45, "right_fingers": [0, 1, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 1.0, "right_wrist": [0.50, 0.50, 0.06], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.2, "left_open": 0.3, "elbow_angle": 50, "right_fingers": [0, 1, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false }
       ]
     },
     "WAIT": {
       "english": "Wait",
       "category": "action",
+      "handedness": "two_hand",
       "duration_ms": 800,
       "non_manual": { "eyebrows": "neutral", "mouth": "idle", "headTilt": "none" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.64, 0.46, 0.14], "left_wrist": [0.36, 0.46, 0.14], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 75 },
-        { "t": 0.5, "right_wrist": [0.66, 0.44, 0.16], "left_wrist": [0.34, 0.44, 0.16], "right_open": 0.9, "left_open": 0.9, "elbow_angle": 80 },
-        { "t": 1.0, "right_wrist": [0.64, 0.46, 0.14], "left_wrist": [0.36, 0.46, 0.14], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 75 }
+        { "t": 0.0, "right_wrist": [0.64, 0.44, 0.14], "left_wrist": [0.36, 0.44, 0.14], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 75, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 0.5, "right_wrist": [0.66, 0.40, 0.16], "left_wrist": [0.34, 0.40, 0.16], "right_open": 0.8, "left_open": 0.8, "elbow_angle": 80, "right_fingers": [0, 1, 1, 1, 1], "left_fingers": [0, 1, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 1.0, "right_wrist": [0.64, 0.44, 0.14], "left_wrist": [0.36, 0.44, 0.14], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 75, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true }
       ]
     },
     "UNDERSTAND": {
       "english": "Understand",
       "category": "cognition",
+      "handedness": "one_hand",
       "duration_ms": 800,
       "non_manual": { "eyebrows": "up", "mouth": "idle", "headTilt": "forward" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.60, 0.24, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.0, "left_open": 0.3, "elbow_angle": 45 },
-        { "t": 0.5, "right_wrist": [0.60, 0.22, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.25, "left_open": 0.3, "elbow_angle": 45 },
-        { "t": 1.0, "right_wrist": [0.60, 0.22, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.25, "left_open": 0.3, "elbow_angle": 45 }
+        { "t": 0.0, "right_wrist": [0.61, 0.22, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.0, "left_open": 0.3, "elbow_angle": 45, "right_fingers": [0, 0, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 0.5, "right_wrist": [0.61, 0.19, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.2, "left_open": 0.3, "elbow_angle": 45, "right_fingers": [0, 1, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 1.0, "right_wrist": [0.61, 0.19, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.2, "left_open": 0.3, "elbow_angle": 45, "right_fingers": [0, 1, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false }
       ]
     },
     "SORRY": {
       "english": "Sorry",
       "category": "courtesy",
+      "handedness": "one_hand",
       "duration_ms": 850,
       "non_manual": { "eyebrows": "down", "mouth": "idle", "headTilt": "left" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.50, 0.48, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.0, "left_open": 0.3, "elbow_angle": 55 },
-        { "t": 0.5, "right_wrist": [0.46, 0.52, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.0, "left_open": 0.3, "elbow_angle": 50 },
-        { "t": 1.0, "right_wrist": [0.52, 0.48, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.0, "left_open": 0.3, "elbow_angle": 60 }
+        { "t": 0.0, "right_wrist": [0.50, 0.49, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.0, "left_open": 0.3, "elbow_angle": 55, "right_fingers": [0, 0, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 0.5, "right_wrist": [0.45, 0.54, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.0, "left_open": 0.3, "elbow_angle": 50, "right_fingers": [0, 0, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 1.0, "right_wrist": [0.53, 0.49, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.0, "left_open": 0.3, "elbow_angle": 60, "right_fingers": [0, 0, 0, 0, 0], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false }
       ]
     },
     "GOOD": {
       "english": "Good",
       "category": "descriptor",
+      "handedness": "two_hand",
       "duration_ms": 750,
       "non_manual": { "eyebrows": "up", "mouth": "smile", "headTilt": "none" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.52, 0.28, 0.06], "left_wrist": [0.46, 0.56, 0.12], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 40 },
-        { "t": 0.5, "right_wrist": [0.50, 0.42, 0.12], "left_wrist": [0.46, 0.56, 0.12], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 60 },
-        { "t": 1.0, "right_wrist": [0.48, 0.54, 0.12], "left_wrist": [0.46, 0.56, 0.12], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 70 }
+        { "t": 0.0, "right_wrist": [0.52, 0.28, 0.06], "left_wrist": [0.46, 0.58, 0.12], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 40, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 0.5, "right_wrist": [0.50, 0.43, 0.12], "left_wrist": [0.46, 0.58, 0.12], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 60, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 1.0, "right_wrist": [0.48, 0.56, 0.12], "left_wrist": [0.46, 0.58, 0.12], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 70, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true }
       ]
     },
     "MORNING": {
       "english": "Morning",
       "category": "greeting",
+      "handedness": "two_hand",
       "duration_ms": 850,
       "non_manual": { "eyebrows": "up", "mouth": "smile", "headTilt": "none" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.54, 0.58, 0.12], "left_wrist": [0.44, 0.54, 0.12], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 75 },
-        { "t": 0.5, "right_wrist": [0.56, 0.46, 0.14], "left_wrist": [0.44, 0.54, 0.12], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 60 },
-        { "t": 1.0, "right_wrist": [0.58, 0.34, 0.14], "left_wrist": [0.44, 0.54, 0.12], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 45 }
+        { "t": 0.0, "right_wrist": [0.55, 0.60, 0.12], "left_wrist": [0.44, 0.54, 0.12], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 75, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 0.5, "right_wrist": [0.57, 0.45, 0.14], "left_wrist": [0.44, 0.54, 0.12], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 60, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 1.0, "right_wrist": [0.59, 0.30, 0.14], "left_wrist": [0.44, 0.54, 0.12], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 45, "right_fingers": [1, 1, 1, 1, 1], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true }
       ]
     },
     "CALL": {
       "english": "Call",
       "category": "communication",
+      "handedness": "one_hand",
       "duration_ms": 800,
       "non_manual": { "eyebrows": "neutral", "mouth": "idle", "headTilt": "none" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.62, 0.28, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.35, "left_open": 0.3, "elbow_angle": 45 },
-        { "t": 0.5, "right_wrist": [0.60, 0.32, 0.12], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.35, "left_open": 0.3, "elbow_angle": 55 },
-        { "t": 1.0, "right_wrist": [0.62, 0.28, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.35, "left_open": 0.3, "elbow_angle": 45 }
+        { "t": 0.0, "right_wrist": [0.64, 0.27, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.4, "left_open": 0.3, "elbow_angle": 45, "right_fingers": [1, 0, 0, 0, 1], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 0.5, "right_wrist": [0.62, 0.31, 0.12], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.4, "left_open": 0.3, "elbow_angle": 55, "right_fingers": [1, 0, 0, 0, 1], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 1.0, "right_wrist": [0.64, 0.27, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.4, "left_open": 0.3, "elbow_angle": 45, "right_fingers": [1, 0, 0, 0, 1], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false }
       ]
     },
     "SIGN": {
       "english": "Sign",
       "category": "communication",
+      "handedness": "two_hand",
       "duration_ms": 850,
       "non_manual": { "eyebrows": "neutral", "mouth": "idle", "headTilt": "none" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.62, 0.44, 0.14], "left_wrist": [0.38, 0.44, 0.14], "right_open": 0.25, "left_open": 0.25, "elbow_angle": 65 },
-        { "t": 0.5, "right_wrist": [0.58, 0.52, 0.18], "left_wrist": [0.42, 0.38, 0.14], "right_open": 0.25, "left_open": 0.25, "elbow_angle": 75 },
-        { "t": 1.0, "right_wrist": [0.62, 0.44, 0.14], "left_wrist": [0.38, 0.44, 0.14], "right_open": 0.25, "left_open": 0.25, "elbow_angle": 65 }
+        { "t": 0.0, "right_wrist": [0.64, 0.42, 0.14], "left_wrist": [0.36, 0.42, 0.14], "right_open": 0.2, "left_open": 0.2, "elbow_angle": 65, "right_fingers": [0, 1, 0, 0, 0], "left_fingers": [0, 1, 0, 0, 0], "right_active": true, "left_active": true },
+        { "t": 0.5, "right_wrist": [0.60, 0.54, 0.18], "left_wrist": [0.40, 0.34, 0.14], "right_open": 0.2, "left_open": 0.2, "elbow_angle": 75, "right_fingers": [0, 1, 0, 0, 0], "left_fingers": [0, 1, 0, 0, 0], "right_active": true, "left_active": true },
+        { "t": 1.0, "right_wrist": [0.64, 0.42, 0.14], "left_wrist": [0.36, 0.42, 0.14], "right_open": 0.2, "left_open": 0.2, "elbow_angle": 65, "right_fingers": [0, 1, 0, 0, 0], "left_fingers": [0, 1, 0, 0, 0], "right_active": true, "left_active": true }
       ]
     },
     "SPEAK": {
       "english": "Speak",
       "category": "communication",
+      "handedness": "one_hand",
       "duration_ms": 800,
       "non_manual": { "eyebrows": "neutral", "mouth": "open", "headTilt": "none" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.54, 0.30, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.8, "left_open": 0.3, "elbow_angle": 45 },
-        { "t": 0.5, "right_wrist": [0.58, 0.32, 0.16], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.8, "left_open": 0.3, "elbow_angle": 65 },
-        { "t": 1.0, "right_wrist": [0.54, 0.30, 0.10], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.8, "left_open": 0.3, "elbow_angle": 50 }
+        { "t": 0.0, "right_wrist": [0.54, 0.29, 0.08], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.8, "left_open": 0.3, "elbow_angle": 45, "right_fingers": [0, 1, 1, 1, 1], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 0.5, "right_wrist": [0.59, 0.31, 0.18], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.8, "left_open": 0.3, "elbow_angle": 65, "right_fingers": [0, 1, 1, 1, 1], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 1.0, "right_wrist": [0.54, 0.29, 0.10], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.8, "left_open": 0.3, "elbow_angle": 50, "right_fingers": [0, 1, 1, 1, 1], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false }
       ]
     },
     "OK": {
       "english": "Okay",
       "category": "response",
+      "handedness": "one_hand",
       "duration_ms": 650,
       "non_manual": { "eyebrows": "up", "mouth": "smile", "headTilt": "none" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.66, 0.40, 0.16], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.65, "left_open": 0.3, "elbow_angle": 75 },
-        { "t": 1.0, "right_wrist": [0.66, 0.38, 0.18], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.65, "left_open": 0.3, "elbow_angle": 75 }
+        { "t": 0.0, "right_wrist": [0.68, 0.40, 0.16], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.6, "left_open": 0.3, "elbow_angle": 75, "right_fingers": [0, 0, 1, 1, 1], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false },
+        { "t": 1.0, "right_wrist": [0.68, 0.39, 0.18], "left_wrist": [0.35, 0.72, 0.0], "right_open": 0.6, "left_open": 0.3, "elbow_angle": 75, "right_fingers": [0, 0, 1, 1, 1], "left_fingers": [0, 0, 0, 0, 0], "right_active": true, "left_active": false }
       ]
     },
     "STOP": {
       "english": "Stop",
       "category": "action",
+      "handedness": "two_hand",
       "duration_ms": 700,
       "non_manual": { "eyebrows": "down", "mouth": "idle", "headTilt": "none" },
       "keyframes": [
-        { "t": 0.0, "right_wrist": [0.56, 0.42, 0.14], "left_wrist": [0.46, 0.56, 0.12], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 55 },
-        { "t": 0.5, "right_wrist": [0.48, 0.54, 0.14], "left_wrist": [0.46, 0.56, 0.12], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 70 },
-        { "t": 1.0, "right_wrist": [0.48, 0.54, 0.14], "left_wrist": [0.46, 0.56, 0.12], "right_open": 1.0, "left_open": 1.0, "elbow_angle": 70 }
+        { "t": 0.0, "right_wrist": [0.57, 0.39, 0.14], "left_wrist": [0.46, 0.58, 0.12], "right_open": 0.8, "left_open": 1.0, "elbow_angle": 55, "right_fingers": [0, 1, 1, 1, 1], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 0.5, "right_wrist": [0.47, 0.56, 0.14], "left_wrist": [0.46, 0.58, 0.12], "right_open": 0.8, "left_open": 1.0, "elbow_angle": 70, "right_fingers": [0, 1, 1, 1, 1], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true },
+        { "t": 1.0, "right_wrist": [0.47, 0.56, 0.14], "left_wrist": [0.46, 0.58, 0.12], "right_open": 0.8, "left_open": 1.0, "elbow_angle": 70, "right_fingers": [0, 1, 1, 1, 1], "left_fingers": [1, 1, 1, 1, 1], "right_active": true, "left_active": true }
       ]
     }
   }
