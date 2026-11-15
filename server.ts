@@ -97,6 +97,26 @@ function mapVoicePresetToGeminiVoice(preset?: string): string {
   return "Kore";
 }
 
+function wrapPcm16ToWavBase64(pcmBase64: string, sampleRate = 24000): string {
+  const pcm = Buffer.from(pcmBase64, "base64");
+  const header = Buffer.alloc(44);
+  const byteRate = sampleRate * 2;
+  header.write("RIFF", 0);
+  header.writeUInt32LE(36 + pcm.length, 4);
+  header.write("WAVE", 8);
+  header.write("fmt ", 12);
+  header.writeUInt32LE(16, 16); // PCM chunk size
+  header.writeUInt16LE(1, 20);  // PCM format
+  header.writeUInt16LE(1, 22);  // Mono
+  header.writeUInt32LE(sampleRate, 24);
+  header.writeUInt32LE(byteRate, 28);
+  header.writeUInt16LE(2, 32);  // Block align
+  header.writeUInt16LE(16, 34); // Bits per sample
+  header.write("data", 36);
+  header.writeUInt32LE(pcm.length, 40);
+  return Buffer.concat([header, pcm]).toString("base64");
+}
+
 async function synthesizeGeminiSpeechWav(
   text: string,
   voicePreset?: string
@@ -133,20 +153,33 @@ async function synthesizeGeminiSpeechWav(
             prebuiltVoiceConfig: { voiceName },
           },
         },
-        abortSignal: AbortSignal.timeout(4500),
+        abortSignal: AbortSignal.timeout(8000),
       },
     });
 
-    const base64Audio =
-      response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
-    if (base64Audio) {
-      if (ttsAudioCache.size >= 40) {
-        const oldest = ttsAudioCache.keys().next().value;
-        if (oldest) ttsAudioCache.delete(oldest);
-      }
-      ttsAudioCache.set(cacheKey, base64Audio);
+    const inlineData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+    const rawData = inlineData?.data || null;
+    if (!rawData) return null;
+
+    const rawBuf = Buffer.from(rawData, "base64");
+    let wavBase64 = rawData;
+    if (rawBuf.subarray(0, 4).toString("ascii") !== "RIFF") {
+      const rateMatch = String(inlineData?.mimeType || "").match(/rate=(\d+)/i);
+      const sampleRate = rateMatch ? Number(rateMatch[1]) : 24000;
+      wavBase64 = wrapPcm16ToWavBase64(rawData, sampleRate);
     }
-    return base64Audio;
+
+    const wavBuf = Buffer.from(wavBase64, "base64");
+    if (wavBuf.length < 1000 || wavBuf.subarray(0, 4).toString("ascii") !== "RIFF") {
+      return null;
+    }
+
+    if (ttsAudioCache.size >= 40) {
+      const oldest = ttsAudioCache.keys().next().value;
+      if (oldest) ttsAudioCache.delete(oldest);
+    }
+    ttsAudioCache.set(cacheKey, wavBase64);
+    return wavBase64;
   } catch (err: any) {
     console.warn("[VAKHYA TTS] Gemini TTS failed:", err?.message || "unknown");
     return null;
@@ -623,10 +656,14 @@ async function startServer() {
           ],
           gloss_hint: String(glosses),
         });
+        const resolvedSentence = pyResult.text || pyResult.translated_text || String(glosses);
+        const realPyAudio =
+          pyResult.audio?.engine === "espeak-ng" ? pyResult.audio?.audio_wav_base64 ?? null : null;
         return res.json({
-          sentence: pyResult.text || pyResult.translated_text || String(glosses),
+          sentence: resolvedSentence,
           confidence: pyResult.confidence ?? 0.94,
-          audioWavBase64: pyResult.audio?.audio_wav_base64 ?? pyResult.audio_wav_base64 ?? null,
+          audioWavBase64:
+            (await synthesizeGeminiSpeechWav(resolvedSentence)) || realPyAudio || null,
           pipeline: pyResult.latency ?? pyResult.pipeline,
         });
       } catch {
@@ -799,8 +836,12 @@ async function startServer() {
     validateRequest,
     async (req: Request, res: Response) => {
       const { text, voiceSettings } = req.body;
-      let audioWavBase64: string | null = null;
-      if (pythonAvailable) {
+      // Always prefer real spoken Gemini TTS over Python's synthetic harmonic beep fallback
+      let audioWavBase64: string | null = await synthesizeGeminiSpeechWav(
+        String(text),
+        voiceSettings?.voiceName
+      );
+      if (!audioWavBase64 && pythonAvailable) {
         try {
           const s2v = await txClient.signToVoice({
             pose_sequence: [
@@ -818,13 +859,13 @@ async function startServer() {
             pitch: Number(voiceSettings?.pitch || 1.0),
             speed: Number(voiceSettings?.speed || 1.0),
           });
-          audioWavBase64 = s2v.audio?.audio_wav_base64 || s2v.audio_wav_base64 || null;
+          // Reject synthetic harmonic sine-wave beeps ("vakhya-formant-pcm") so browser speechSynthesis can speak real words instead
+          if (s2v.audio?.engine === "espeak-ng" && s2v.audio?.audio_wav_base64) {
+            audioWavBase64 = s2v.audio.audio_wav_base64;
+          }
         } catch {
-          // fall through to Gemini TTS
+          // client falls back cleanly to browser Web Speech API
         }
-      }
-      if (!audioWavBase64) {
-        audioWavBase64 = await synthesizeGeminiSpeechWav(String(text), voiceSettings?.voiceName);
       }
       return res.json({
         text,
@@ -1056,9 +1097,11 @@ async function startServer() {
             s2v.text ||
             s2v.recognized_gloss ||
             "Hello";
+          const realPyAudio =
+            s2v.audio?.engine === "espeak-ng" ? s2v.audio?.audio_wav_base64 || null : null;
           const audioWavBase64 =
             (await synthesizeGeminiSpeechWav(resolvedSentence, voicePreset)) ||
-            s2v.audio?.audio_wav_base64 ||
+            realPyAudio ||
             null;
           return res.json({
             recognized: true,
