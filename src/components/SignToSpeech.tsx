@@ -103,6 +103,7 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
           frames_base64: framesBase64.slice(0, 3),
           hand_summary: handSummary,
           signLanguage: profile.primarySignLanguage || "ASL",
+          voicePreset: profile.voiceSettings.voiceName,
           pitch: profile.voiceSettings.pitch,
           speed: profile.voiceSettings.speed,
         }),
@@ -131,14 +132,17 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    canvas.width = canvas.parentElement?.clientWidth || 640;
-    canvas.height = canvas.parentElement?.clientHeight || 480;
-
     let frameCounter = 0;
+    let peakMotion = 0;
 
     const render = () => {
       if (!isCameraActiveRef.current) return;
       frameCounter++;
+
+      const targetW = canvas.parentElement?.clientWidth || 640;
+      const targetH = canvas.parentElement?.clientHeight || 480;
+      if (canvas.width !== targetW) canvas.width = targetW;
+      if (canvas.height !== targetH) canvas.height = targetH;
 
       if (trackerRef.current && video.readyState >= 2) {
         const detection = trackerRef.current.detectFrame(video);
@@ -150,25 +154,47 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
             poseBufferRef.current.shift();
           }
           handSummaryRef.current = detection.handSummary;
+          if (detection.motionEnergy > peakMotion) peakMotion = detection.motionEnergy;
+
           if (
             frameSnapsRef.current.length === 0 ||
-            (poseBufferRef.current.length === 5 && frameSnapsRef.current.length < 2) ||
-            (poseBufferRef.current.length >= 10 && frameSnapsRef.current.length < 3)
+            (poseBufferRef.current.length === 4 && frameSnapsRef.current.length < 2) ||
+            (poseBufferRef.current.length >= 8 && frameSnapsRef.current.length < 3)
           ) {
             const snap = trackerRef.current.captureCompactFrame(video, true);
             if (snap) frameSnapsRef.current.push(snap);
           }
 
           const now = Date.now();
-          if (poseBufferRef.current.length >= 10 && now - lastAutoInferRef.current > 2400) {
+          const hasSignal =
+            Boolean(detection.detectedLocalSign) ||
+            (detection.engine === "mediapipe-hand-landmarker" && poseBufferRef.current.length >= 6) ||
+            peakMotion > 2.4;
+
+          if (hasSignal && poseBufferRef.current.length >= 6 && now - lastAutoInferRef.current > 1800) {
             lastAutoInferRef.current = now;
             const snapshot = [...poseBufferRef.current];
             const snaps = [...frameSnapsRef.current];
             const summary = handSummaryRef.current;
             poseBufferRef.current = [];
             frameSnapsRef.current = [];
+            peakMotion = 0;
             void inferPoseBuffer(snapshot, snaps, summary);
           }
+        } else if (
+          !detection.hasActiveHands &&
+          poseBufferRef.current.length >= 5 &&
+          (handSummaryRef.current.includes("localHint=") || peakMotion > 2.4) &&
+          Date.now() - lastAutoInferRef.current > 1800
+        ) {
+          lastAutoInferRef.current = Date.now();
+          const snapshot = [...poseBufferRef.current];
+          const snaps = [...frameSnapsRef.current];
+          const summary = handSummaryRef.current;
+          poseBufferRef.current = [];
+          frameSnapsRef.current = [];
+          peakMotion = 0;
+          void inferPoseBuffer(snapshot, snaps, summary);
         }
       }
 
@@ -214,14 +240,17 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
   };
 
   const playTranslatedAudio = (text: string, audioWavBase64?: string | null) => {
-    if (window.speechSynthesis) {
-      triggerVoiceSynthesizer(text);
-      return;
-    }
     if (audioWavBase64) {
-      const audio = new Audio(`data:audio/wav;base64,${audioWavBase64}`);
-      audio.play().catch(() => {});
+      const clean = String(audioWavBase64).replace(/^data:audio\/[\w+;=-]+;base64,/, "");
+      if (clean) {
+        const audio = new Audio(`data:audio/wav;base64,${clean}`);
+        audio.play().catch(() => {
+          triggerVoiceSynthesizer(text);
+        });
+        return;
+      }
     }
+    triggerVoiceSynthesizer(text);
   };
 
   // Trigger browser Audio Context Text-To-Speech with voice presets modulation

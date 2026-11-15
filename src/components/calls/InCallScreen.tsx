@@ -18,6 +18,7 @@ import {
   Send,
   Hand,
   X,
+  Volume2,
   Video as VideoIcon,
 } from "lucide-react";
 import { realtimeClient, SignalingEvent } from "../../services/realtimeClient";
@@ -168,7 +169,7 @@ export default function InCallScreen({
   const [isCamOn, setIsCamOn] = useState(callType === "video");
   const [isFrontCamera, setIsFrontCamera] = useState(true);
   const [showCaptions, setShowCaptions] = useState(true);
-  const [showHandOverlay, setShowHandOverlay] = useState(false);
+  const [showHandOverlay, setShowHandOverlay] = useState(true);
   const [showQuickMessageBar, setShowQuickMessageBar] = useState(false);
   const [quickText, setQuickText] = useState("");
   const [activeSignLanguage, setActiveSignLanguage] = useState(
@@ -190,6 +191,7 @@ export default function InCallScreen({
   const [isTranslatingSign, setIsTranslatingSign] = useState(false);
   const [hasIncomingSignPose, setHasIncomingSignPose] = useState(false);
   const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
+  const [remoteAudioMutedByAutoplay, setRemoteAudioMutedByAutoplay] = useState(false);
   const [mediaReadyTick, setMediaReadyTick] = useState(0);
   const [webrtcStatus, setWebrtcStatus] = useState("Connecting video…");
   const [isPeerConnected, setIsPeerConnected] = useState(false);
@@ -203,10 +205,14 @@ export default function InCallScreen({
   const remoteStreamRef = useRef<MediaStream | null>(null);
   const outgoingPeerStreamRef = useRef<MediaStream | null>(null);
   const outgoingAudioTrackRef = useRef<MediaStreamTrack | null>(null);
+  const rawMicTrackRef = useRef<MediaStreamTrack | null>(null);
+  const audioSenderRef = useRef<RTCRtpSender | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const txAudioDestRef = useRef<MediaStreamAudioDestinationNode | null>(null);
   const micGainRef = useRef<GainNode | null>(null);
+  const micSourceConnectedRef = useRef<boolean>(false);
   const ttsPlaybackUntilRef = useRef<number>(0);
+  const ttsPlayGenerationRef = useRef<number>(0);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const remoteIdentityRef = useRef<string>(remoteUser.identity || "");
   const peerInRoomRef = useRef<boolean>(false);
@@ -329,6 +335,56 @@ export default function InCallScreen({
     }
   };
 
+  const ensureAudioMixer = async (): Promise<{
+    ctx: AudioContext;
+    dest: MediaStreamAudioDestinationNode;
+    mixedTrack: MediaStreamTrack | null;
+  } | null> => {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioCtx) return null;
+
+    let ctx = audioCtxRef.current;
+    if (!ctx) {
+      try {
+        ctx = new AudioCtx();
+        audioCtxRef.current = ctx;
+      } catch {
+        return null;
+      }
+    }
+
+    if (ctx.state === "suspended") {
+      await ctx.resume().catch(() => {});
+    }
+
+    let dest = txAudioDestRef.current;
+    if (!dest) {
+      dest = ctx.createMediaStreamDestination();
+      txAudioDestRef.current = dest;
+      outgoingAudioTrackRef.current = dest.stream.getAudioTracks()[0] || null;
+    }
+
+    if (rawMicTrackRef.current && !micSourceConnectedRef.current) {
+      try {
+        const micSource = ctx.createMediaStreamSource(new MediaStream([rawMicTrackRef.current]));
+        const micGain = ctx.createGain();
+        micGain.gain.value = isMutedRef.current ? 0 : 1;
+        micSource.connect(micGain);
+        micGain.connect(dest);
+        micGainRef.current = micGain;
+        micSourceConnectedRef.current = true;
+      } catch {
+        // Ignore if mic track cannot be attached to AudioContext
+      }
+    }
+
+    return {
+      ctx,
+      dest,
+      mixedTrack: outgoingAudioTrackRef.current,
+    };
+  };
+
   const injectAndPlayTtsAudio = async (
     text: string,
     initialWavBase64?: string | null,
@@ -361,37 +417,60 @@ export default function InCallScreen({
       }
     }
 
-    const ctx = audioCtxRef.current;
-    const dest = txAudioDestRef.current;
-    if (wavBase64 && ctx) {
-      try {
-        if (ctx.state === "suspended") {
-          await ctx.resume().catch(() => {});
-        }
-        if (ctx.state === "running") {
-          const audioBuffer = await ctx.decodeAudioData(decodeBase64ToArrayBuffer(wavBase64));
-          const nowAudio = ctx.currentTime;
-          const startAt = Math.max(nowAudio, ttsPlaybackUntilRef.current);
-          ttsPlaybackUntilRef.current = startAt + audioBuffer.duration + 0.05;
+    const mixer = await ensureAudioMixer();
+    const pc = pcRef.current;
+    const isRtcConnected = Boolean(
+      pc &&
+        (pc.connectionState === "connected" ||
+          pc.iceConnectionState === "connected" ||
+          pc.iceConnectionState === "completed")
+    );
 
-          const source = ctx.createBufferSource();
-          source.buffer = audioBuffer;
-          source.connect(ctx.destination);
-          const hasLiveWebRtcAudio = Boolean(
-            dest &&
-              pcRef.current?.connectionState === "connected" &&
-              outgoingAudioTrackRef.current &&
-              outgoingAudioTrackRef.current.readyState === "live"
-          );
-          if (dest) {
-            source.connect(dest);
+    if (wavBase64 && mixer && mixer.ctx.state === "running") {
+      try {
+        const audioBuffer = await mixer.ctx.decodeAudioData(decodeBase64ToArrayBuffer(wavBase64));
+        const gen = ++ttsPlayGenerationRef.current;
+        const sender = audioSenderRef.current;
+        let swappedTrackForTts = false;
+
+        if (sender && mixer.mixedTrack && mixer.mixedTrack.readyState === "live") {
+          if (rawMicTrackRef.current && micGainRef.current) {
+            rawMicTrackRef.current.enabled = true;
+            micGainRef.current.gain.setTargetAtTime(
+              isMutedRef.current ? 0 : 1,
+              mixer.ctx.currentTime,
+              0.01
+            );
           }
-          source.start(startAt);
-          return {
-            streamedViaWebRtc: hasLiveWebRtcAudio,
-            audioWavBase64: wavBase64,
-          };
+          if (sender.track !== mixer.mixedTrack) {
+            await sender.replaceTrack(mixer.mixedTrack).catch(() => {});
+          }
+          swappedTrackForTts = sender.track === mixer.mixedTrack;
         }
+
+        const nowAudio = mixer.ctx.currentTime;
+        const startAt = Math.max(nowAudio, ttsPlaybackUntilRef.current);
+        ttsPlaybackUntilRef.current = startAt + audioBuffer.duration + 0.05;
+
+        const source = mixer.ctx.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(mixer.ctx.destination);
+        source.connect(mixer.dest);
+        source.onended = () => {
+          if (ttsPlayGenerationRef.current !== gen) return;
+          const rawMic = rawMicTrackRef.current;
+          const currentSender = audioSenderRef.current;
+          if (rawMic && currentSender && currentSender.track !== rawMic) {
+            rawMic.enabled = !isMutedRef.current;
+            void currentSender.replaceTrack(rawMic).catch(() => {});
+          }
+        };
+        source.start(startAt);
+
+        return {
+          streamedViaWebRtc: Boolean(isRtcConnected && swappedTrackForTts),
+          audioWavBase64: wavBase64,
+        };
       } catch {
         // Fall through to element/SpeechSynthesis playback
       }
@@ -491,6 +570,17 @@ export default function InCallScreen({
     const pc = new RTCPeerConnection(ICE_CONFIG);
     pcRef.current = pc;
 
+    const tryPlayRemoteVideo = () => {
+      const videoEl = remoteVideoRef.current;
+      if (!videoEl) return;
+      videoEl.play().catch(() => {
+        // If unmuted autoplay is blocked, mute temporarily so remote video renders immediately
+        videoEl.muted = true;
+        setRemoteAudioMutedByAutoplay(true);
+        videoEl.play().catch(() => {});
+      });
+    };
+
     pc.ontrack = (event) => {
       const targetStream = remoteStreamRef.current!;
       const alreadyAdded = targetStream.getTracks().some((t) => t.id === event.track.id);
@@ -498,21 +588,17 @@ export default function InCallScreen({
         targetStream.addTrack(event.track);
       }
       if (remoteVideoRef.current) {
-        if (remoteVideoRef.current.srcObject !== targetStream) {
-          remoteVideoRef.current.srcObject = targetStream;
-        }
-        remoteVideoRef.current.play().catch(() => {});
+        remoteVideoRef.current.srcObject = new MediaStream(targetStream.getTracks());
+        tryPlayRemoteVideo();
       }
       if (event.track.kind === "video") {
         setHasRemoteVideo(true);
         event.track.onunmute = () => {
           setHasRemoteVideo(true);
-          remoteVideoRef.current?.play().catch(() => {});
+          tryPlayRemoteVideo();
         };
         event.track.onended = () => setHasRemoteVideo(false);
       }
-      setIsPeerConnected(true);
-      setWebrtcStatus("Connected");
     };
 
     pc.onicecandidate = (event) => {
@@ -525,6 +611,9 @@ export default function InCallScreen({
         });
       }
     };
+
+    const shouldIOffer = (peerId?: string | null) => Boolean(peerId && myIdentity < peerId);
+    const isPoliteTo = (peerId?: string | null) => Boolean(peerId && myIdentity > peerId);
 
     const sendOfferToPeer = async (targetId?: string, forceRenegotiate = false) => {
       try {
@@ -550,39 +639,43 @@ export default function InCallScreen({
     };
 
     let didIceRestart = false;
-    pc.onconnectionstatechange = () => {
+    const syncConnectionState = () => {
       const st = pc.connectionState;
-      if (st === "connected") {
+      const iceSt = pc.iceConnectionState;
+      if (st === "connected" || iceSt === "connected" || iceSt === "completed") {
         didIceRestart = false;
         setIsPeerConnected(true);
         setWebrtcStatus("Connected");
-      } else if (st === "connecting") {
+      } else if (st === "connecting" || iceSt === "checking" || iceSt === "new") {
+        setIsPeerConnected(false);
         setWebrtcStatus("Connecting video…");
-      } else if (st === "failed" && !didIceRestart && remoteIdentityRef.current) {
+      } else if ((st === "failed" || iceSt === "failed") && !didIceRestart && remoteIdentityRef.current) {
         didIceRestart = true;
         setWebrtcStatus("Reconnecting…");
         try {
           pc.restartIce();
-          if (peerInRoomRef.current && (isInitiator || myIdentity < remoteIdentityRef.current)) {
+          if (peerInRoomRef.current && shouldIOffer(remoteIdentityRef.current)) {
             void sendOfferToPeer(remoteIdentityRef.current, true);
           }
         } catch {}
-      } else if (st === "disconnected" || st === "failed") {
+      } else if (st === "disconnected" || st === "failed" || iceSt === "disconnected" || iceSt === "failed") {
         setIsPeerConnected(false);
         setHasRemoteVideo(false);
         setWebrtcStatus(
-          st === "failed" && !turnConfiguredRef.current
-            ? "Connection failed — check TURN settings on server"
-            : "Connection interrupted"
+          (st === "failed" || iceSt === "failed") && !turnConfiguredRef.current
+            ? "Connection failed — configure TURN_URLS on server"
+            : "Reconnecting video…"
         );
       }
     };
+    pc.onconnectionstatechange = syncConnectionState;
+    pc.oniceconnectionstatechange = syncConnectionState;
 
     pc.onnegotiationneeded = async () => {
       if (
         peerInRoomRef.current &&
         remoteIdentityRef.current &&
-        (isInitiator || myIdentity < remoteIdentityRef.current)
+        shouldIOffer(remoteIdentityRef.current)
       ) {
         await sendOfferToPeer(remoteIdentityRef.current);
       }
@@ -598,7 +691,7 @@ export default function InCallScreen({
           peerInRoomRef.current = true;
           remoteIdentityRef.current = other.identity;
           setWebrtcStatus("Connecting video…");
-          if (isInitiator || myIdentity < other.identity) {
+          if (shouldIOffer(other.identity)) {
             await sendOfferToPeer(other.identity, true);
           }
         } else {
@@ -612,7 +705,7 @@ export default function InCallScreen({
         peerInRoomRef.current = true;
         remoteIdentityRef.current = msg.senderIdentity;
         setWebrtcStatus("Connecting video…");
-        if (isInitiator || myIdentity < msg.senderIdentity) {
+        if (shouldIOffer(msg.senderIdentity)) {
           await sendOfferToPeer(msg.senderIdentity, true);
         }
         return;
@@ -629,7 +722,7 @@ export default function InCallScreen({
       if (msg.type === "offer" && msg.payload?.description) {
         peerInRoomRef.current = true;
         if (msg.senderIdentity) remoteIdentityRef.current = msg.senderIdentity;
-        const polite = !isInitiator || myIdentity > (msg.senderIdentity || "");
+        const polite = isPoliteTo(msg.senderIdentity || remoteIdentityRef.current);
         const offerCollision = makingOfferRef.current || pc.signalingState !== "stable";
         ignoreOfferRef.current = !polite && offerCollision;
         if (ignoreOfferRef.current) return;
@@ -746,30 +839,6 @@ export default function InCallScreen({
       const outgoingPeerStream = new MediaStream();
       outgoingPeerStreamRef.current = outgoingPeerStream;
 
-      // Always create a mixed outgoing WebRTC audio track so sign-to-voice TTS audio
-      // travels straight through the live call audio stream (even when mic is muted/absent)
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioCtx && !cancelled) {
-        try {
-          const ctx = new AudioCtx();
-          audioCtxRef.current = ctx;
-          if (ctx.state === "suspended") {
-            ctx.resume().catch(() => {});
-          }
-          const dest = ctx.createMediaStreamDestination();
-          txAudioDestRef.current = dest;
-          const mixedAudioTrack = dest.stream.getAudioTracks()[0] || null;
-          if (mixedAudioTrack) {
-            outgoingAudioTrackRef.current = mixedAudioTrack;
-            outgoingPeerStream.addTrack(mixedAudioTrack);
-            pc.addTrack(mixedAudioTrack, outgoingPeerStream);
-            hasAudioTrack = true;
-          }
-        } catch {
-          // Fall back to raw mic track if AudioContext cannot be created
-        }
-      }
-
       try {
         let stream: MediaStream;
         try {
@@ -780,7 +849,17 @@ export default function InCallScreen({
             audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
           });
         } catch {
-          stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+          } catch {
+            // If another tab holds mic/cam or mic failed, still try video-only capture
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: isCamOnRef.current
+                ? { width: 640, height: 480, facingMode: isFrontCameraRef.current ? "user" : "environment" }
+                : false,
+              audio: false,
+            });
+          }
         }
 
         if (cancelled) {
@@ -796,26 +875,14 @@ export default function InCallScreen({
           localVideoRef.current.play().catch(() => {});
         }
 
+        // Attach the native mic track directly so voice works even before any AudioContext gesture
         const micTrack = stream.getAudioTracks()[0];
         if (micTrack) {
-          if (audioCtxRef.current && txAudioDestRef.current) {
-            micTrack.enabled = true;
-            try {
-              const micSource = audioCtxRef.current.createMediaStreamSource(new MediaStream([micTrack]));
-              const micGain = audioCtxRef.current.createGain();
-              micGain.gain.value = isMutedRef.current ? 0 : 1;
-              micSource.connect(micGain);
-              micGain.connect(txAudioDestRef.current);
-              micGainRef.current = micGain;
-            } catch {
-              micTrack.enabled = !isMutedRef.current;
-            }
-          } else {
-            micTrack.enabled = !isMutedRef.current;
-            outgoingPeerStream.addTrack(micTrack);
-            pc.addTrack(micTrack, outgoingPeerStream);
-            hasAudioTrack = true;
-          }
+          micTrack.enabled = !isMutedRef.current;
+          rawMicTrackRef.current = micTrack;
+          outgoingPeerStream.addTrack(micTrack);
+          audioSenderRef.current = pc.addTrack(micTrack, outgoingPeerStream);
+          hasAudioTrack = true;
         }
 
         const videoTrack = stream.getVideoTracks()[0];
@@ -825,11 +892,18 @@ export default function InCallScreen({
           pc.addTrack(videoTrack, outgoingPeerStream);
         }
       } catch {
-        setWebrtcStatus(
-          hasAudioTrack ? "Camera unavailable — audio + sign voice active" : "Camera/mic unavailable — receive-only mode"
-        );
+        setWebrtcStatus("Camera/mic unavailable — receive-only mode");
       } finally {
         if (!cancelled) {
+          // If no physical mic was captured, provide an AudioContext track so sign-to-voice can still transmit
+          if (!hasAudioTrack) {
+            const mixer = await ensureAudioMixer();
+            if (mixer?.mixedTrack) {
+              outgoingPeerStream.addTrack(mixer.mixedTrack);
+              audioSenderRef.current = pc.addTrack(mixer.mixedTrack, outgoingPeerStream);
+              hasAudioTrack = true;
+            }
+          }
           try {
             if (!hasAudioTrack && !pc.getTransceivers().some((t) => t.receiver.track?.kind === "audio")) {
               pc.addTransceiver("audio", { direction: "recvonly" });
@@ -867,8 +941,11 @@ export default function InCallScreen({
         outgoingAudioTrackRef.current.stop();
         outgoingAudioTrackRef.current = null;
       }
+      rawMicTrackRef.current = null;
+      audioSenderRef.current = null;
       outgoingPeerStreamRef.current = null;
       micGainRef.current = null;
+      micSourceConnectedRef.current = false;
       txAudioDestRef.current = null;
       if (audioCtxRef.current) {
         audioCtxRef.current.close().catch(() => {});
@@ -889,7 +966,7 @@ export default function InCallScreen({
     }
   }, [isCamOn, mediaReadyTick]);
 
-  // Live mute toggle (mute mic gain without silencing mixed sign-to-voice TTS audio)
+  // Live mute toggle (mute mic gain if actively mixing TTS, and native mic track otherwise)
   useEffect(() => {
     if (micGainRef.current && audioCtxRef.current) {
       micGainRef.current.gain.setTargetAtTime(
@@ -897,7 +974,13 @@ export default function InCallScreen({
         audioCtxRef.current.currentTime,
         0.015
       );
-    } else {
+    }
+    const usingMixedTrack = Boolean(
+      audioSenderRef.current &&
+        outgoingAudioTrackRef.current &&
+        audioSenderRef.current.track === outgoingAudioTrackRef.current
+    );
+    if (!usingMixedTrack) {
       localStreamRef.current?.getAudioTracks().forEach((t) => {
         t.enabled = !isMuted;
       });
@@ -1374,18 +1457,20 @@ export default function InCallScreen({
               quietFramesAfterMotionRef.current = 0;
             }
 
+            const isMediaPipeHit = detection.engine === "mediapipe-hand-landmarker";
             const hasIntentionalSign =
               Boolean(detection.detectedLocalSign) ||
-              peakMotionRef.current > 1.2 ||
-              poseBufferRef.current.length >= 8;
+              (isMediaPipeHit && poseBufferRef.current.length >= 6) ||
+              peakMotionRef.current > 2.4;
             const gestureCompleted =
-              poseBufferRef.current.length >= 5 && quietFramesAfterMotionRef.current >= 2;
+              (Boolean(detection.detectedLocalSign) && poseBufferRef.current.length >= 5) ||
+              (poseBufferRef.current.length >= 6 && quietFramesAfterMotionRef.current >= 2);
             const bufferFull = poseBufferRef.current.length >= 10;
 
             if (
               hasIntentionalSign &&
               (gestureCompleted || bufferFull) &&
-              now - lastPoseInferRef.current > 1800
+              now - lastPoseInferRef.current > 1500
             ) {
               lastPoseInferRef.current = now;
               const snapshot = [...poseBufferRef.current];
@@ -1400,7 +1485,8 @@ export default function InCallScreen({
           } else if (
             !detection.hasActiveHands &&
             poseBufferRef.current.length >= 5 &&
-            now - lastPoseInferRef.current > 1800
+            (handSummaryRef.current.includes("localHint=") || peakMotionRef.current > 2.4) &&
+            now - lastPoseInferRef.current > 1500
           ) {
             lastPoseInferRef.current = now;
             const snapshot = [...poseBufferRef.current];
@@ -1463,7 +1549,13 @@ export default function InCallScreen({
         if (audioCtxRef.current?.state === "suspended") {
           audioCtxRef.current.resume().catch(() => {});
         }
-        remoteVideoRef.current?.play().catch(() => {});
+        if (remoteVideoRef.current) {
+          if (remoteVideoRef.current.muted) {
+            remoteVideoRef.current.muted = false;
+            setRemoteAudioMutedByAutoplay(false);
+          }
+          remoteVideoRef.current.play().catch(() => {});
+        }
       }}
       className="absolute inset-0 bg-[#151B29] z-50 overflow-hidden flex flex-col justify-between font-sans select-none"
     >
@@ -1491,6 +1583,21 @@ export default function InCallScreen({
 
         {/* Clean Language & Captions Toggle */}
         <div className="flex items-center gap-2 shrink-0">
+          {remoteAudioMutedByAutoplay && (
+            <button
+              onClick={() => {
+                if (remoteVideoRef.current) {
+                  remoteVideoRef.current.muted = false;
+                  remoteVideoRef.current.play().catch(() => {});
+                }
+                setRemoteAudioMutedByAutoplay(false);
+              }}
+              className="px-2.5 py-1.5 rounded-lg bg-[#22F3A6] text-[#0E1523] text-xs font-semibold flex items-center gap-1 shadow-lg cursor-pointer"
+            >
+              <Volume2 className="w-3.5 h-3.5" />
+              <span>Unmute Audio</span>
+            </button>
+          )}
           <div className="flex items-center bg-[#1D2538]/90 border border-white/10 rounded-lg p-0.5 text-xs">
             {(["ASL", "ISL"] as const).map((lang) => (
               <button

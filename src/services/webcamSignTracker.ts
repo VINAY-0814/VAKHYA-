@@ -50,23 +50,24 @@ export async function initHandLandmarker(): Promise<HandLandmarker | null> {
           baseOptions: { modelAssetPath, delegate: "GPU" },
           runningMode: "VIDEO",
           numHands: 2,
-          minHandDetectionConfidence: 0.45,
-          minHandPresenceConfidence: 0.45,
-          minTrackingConfidence: 0.45,
+          minHandDetectionConfidence: 0.38,
+          minHandPresenceConfidence: 0.38,
+          minTrackingConfidence: 0.38,
         });
       } catch {
         landmarker = await HandLandmarker.createFromOptions(vision, {
           baseOptions: { modelAssetPath, delegate: "CPU" },
           runningMode: "VIDEO",
           numHands: 2,
-          minHandDetectionConfidence: 0.45,
-          minHandPresenceConfidence: 0.45,
-          minTrackingConfidence: 0.45,
+          minHandDetectionConfidence: 0.38,
+          minHandPresenceConfidence: 0.38,
+          minTrackingConfidence: 0.38,
         });
       }
       sharedLandmarker = landmarker;
       return landmarker;
-    } catch {
+    } catch (err) {
+      console.warn("[VAKHYA Sign] HandLandmarker init failed, using CV fallback:", err);
       initPromise = null;
       return null;
     }
@@ -77,19 +78,25 @@ export async function initHandLandmarker(): Promise<HandLandmarker | null> {
 
 function getFingerStates(lm: Array<{ x: number; y: number; z: number }>) {
   if (!lm || lm.length < 21) {
-    return { thumb: false, index: false, middle: false, ring: false, pinky: false, openScore: 0.5 };
+    return { thumb: false, index: false, middle: false, ring: false, pinky: false, openScore: 0.5, palmSize: 0.15, thumbIndexPinch: false };
   }
   const wrist = lm[0];
-  // Thumb: tip (4) vs IP (3) distance from pinky MCP (17)
-  const thumbTipDist = Math.hypot(lm[4].x - lm[17].x, lm[4].y - lm[17].y);
-  const thumbIpDist = Math.hypot(lm[3].x - lm[17].x, lm[3].y - lm[17].y);
-  const thumb = thumbTipDist > thumbIpDist * 1.15;
+  const palmSize = Math.max(0.05, Math.hypot(lm[9].x - wrist.x, lm[9].y - wrist.y));
+
+  // Thumb: compare tip (4) vs IP (3) distance from pinky MCP (17) and index MCP (5)
+  const thumbTipPinky = Math.hypot(lm[4].x - lm[17].x, lm[4].y - lm[17].y);
+  const thumbIpPinky = Math.hypot(lm[3].x - lm[17].x, lm[3].y - lm[17].y);
+  const thumbTipIndex = Math.hypot(lm[4].x - lm[5].x, lm[4].y - lm[5].y);
+  const thumb = thumbTipPinky > thumbIpPinky * 1.08 && thumbTipIndex > palmSize * 0.42;
+
+  const thumbIndexDist = Math.hypot(lm[4].x - lm[8].x, lm[4].y - lm[8].y);
+  const thumbIndexPinch = thumbIndexDist < palmSize * 0.45;
 
   const checkFinger = (tipIdx: number, pipIdx: number, mcpIdx: number) => {
     const tipDist = Math.hypot(lm[tipIdx].x - wrist.x, lm[tipIdx].y - wrist.y);
     const pipDist = Math.hypot(lm[pipIdx].x - wrist.x, lm[pipIdx].y - wrist.y);
     const mcpDist = Math.hypot(lm[mcpIdx].x - wrist.x, lm[mcpIdx].y - wrist.y);
-    return tipDist > pipDist * 1.05 && tipDist > mcpDist * 1.25;
+    return tipDist > pipDist * 1.02 && tipDist > mcpDist * 1.18;
   };
 
   const index = checkFinger(8, 6, 5);
@@ -105,6 +112,8 @@ function getFingerStates(lm: Array<{ x: number; y: number; z: number }>) {
     ring,
     pinky,
     openScore: Number((openCount / 5).toFixed(2)),
+    palmSize,
+    thumbIndexPinch,
   };
 }
 
@@ -121,52 +130,61 @@ function classifyStaticSign(
 
   if (hands.length >= 2) {
     const bothOpen = hands.every((h) => h.fingers.openScore >= 0.6);
-    const closeTogether = Math.hypot(hands[0].wrist.x - hands[1].wrist.x, hands[0].wrist.y - hands[1].wrist.y) < 0.32;
+    const closeTogether =
+      Math.hypot(hands[0].wrist.x - hands[1].wrist.x, hands[0].wrist.y - hands[1].wrist.y) < 0.34;
     if (bothOpen && closeTogether) {
-      return { gloss: "HELP", sentence: "Please help.", confidence: 0.78 };
+      return { gloss: "HELP", sentence: "Please help.", confidence: 0.82 };
     }
     if (hands.every((h) => h.fingers.openScore >= 0.8)) {
-      return { gloss: "HELLO", sentence: "Hello!", confidence: 0.76 };
+      return { gloss: "HELLO", sentence: "Hello!", confidence: 0.8 };
     }
   }
 
   const h = hands[0];
-  const { thumb, index, middle, ring, pinky } = h.fingers;
+  const { thumb, index, middle, ring, pinky, thumbIndexPinch } = h.fingers;
   const wy = h.wrist.y;
 
   // ILY handshape: thumb + index + pinky extended
   if (thumb && index && !middle && !ring && pinky) {
-    return { gloss: "I_LOVE_YOU", sentence: "I love you.", confidence: 0.88 };
+    return { gloss: "I_LOVE_YOU", sentence: "I love you.", confidence: 0.9 };
   }
   // Call me / Y handshape: thumb + pinky
   if (thumb && !index && !middle && !ring && pinky) {
-    return { gloss: "CALL_ME", sentence: "Call me.", confidence: 0.84 };
+    return { gloss: "CALL_ME", sentence: "Call me.", confidence: 0.86 };
+  }
+  // OK / Good / Fine: thumb-index pinch + middle, ring, pinky up
+  if (thumbIndexPinch && middle && ring && pinky) {
+    return { gloss: "OK", sentence: "Okay, I understand.", confidence: 0.85 };
   }
   // Thumbs up / Good
-  if (thumb && !index && !middle && !ring && !pinky && h.thumbTip.y < h.wrist.y - 0.04) {
-    return { gloss: "GOOD", sentence: "Good, yes.", confidence: 0.84 };
+  if (thumb && !index && !middle && !ring && !pinky && h.thumbTip.y < h.wrist.y - 0.03) {
+    return { gloss: "GOOD", sentence: "Good, yes.", confidence: 0.86 };
+  }
+  // Three / Water (W handshape)
+  if (!thumb && index && middle && ring && !pinky) {
+    return { gloss: "THREE", sentence: "Three.", confidence: 0.8 };
   }
   // Peace / Two / Victory
   if (!thumb && index && middle && !ring && !pinky) {
-    return { gloss: "TWO", sentence: "Two / Peace.", confidence: 0.82 };
+    return { gloss: "TWO", sentence: "Two / Peace.", confidence: 0.84 };
   }
   // Pointing / You
   if (!thumb && index && !middle && !ring && !pinky) {
-    return { gloss: "YOU", sentence: "You.", confidence: 0.78 };
+    return { gloss: "YOU", sentence: "You.", confidence: 0.8 };
   }
-  // Open palm high / waving -> Hello or Thank You near chin
+  // Open palm -> Thank You near upper face, Hello when high/waving, Stop when steady
   if (index && middle && ring && pinky) {
-    if (wy < 0.45 && motionEnergy > 1.0) {
-      return { gloss: "HELLO", sentence: "Hello!", confidence: 0.8 };
+    if (wy < 0.42 && motionEnergy <= 1.2) {
+      return { gloss: "THANK_YOU", sentence: "Thank you!", confidence: 0.82 };
     }
-    if (wy >= 0.35 && wy <= 0.62 && motionEnergy < 1.2) {
-      return { gloss: "STOP", sentence: "Wait / Stop.", confidence: 0.76 };
+    if (wy < 0.5 || motionEnergy > 0.85) {
+      return { gloss: "HELLO", sentence: "Hello!", confidence: 0.84 };
     }
-    return { gloss: "HELLO", sentence: "Hello!", confidence: 0.74 };
+    return { gloss: "STOP", sentence: "Wait / Stop.", confidence: 0.8 };
   }
-  // Closed fist -> Yes / Understand
-  if (!thumb && !index && !middle && !ring && !pinky && motionEnergy > 0.8) {
-    return { gloss: "YES", sentence: "Yes.", confidence: 0.75 };
+  // Closed fist -> Yes
+  if (!thumb && !index && !middle && !ring && !pinky) {
+    return { gloss: "YES", sentence: "Yes.", confidence: 0.78 };
   }
 
   return null;
@@ -272,9 +290,9 @@ export class WebcamSignTracker {
       sharedLandmarker &&
       video.readyState >= 2 &&
       video.videoWidth > 0 &&
-      video.currentTime !== this.lastVideoTime
+      !video.paused &&
+      !video.ended
     ) {
-      this.lastVideoTime = video.currentTime;
       const ts = Math.max(this.lastDetectTs + 1, Math.round(now));
       this.lastDetectTs = ts;
       try {

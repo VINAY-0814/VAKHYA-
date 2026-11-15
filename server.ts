@@ -947,12 +947,32 @@ async function startServer() {
         voicePreset,
       } = req.body;
 
-      let recognizedGloss: string | undefined = gloss_hint ? String(gloss_hint).toUpperCase() : undefined;
+      const PHRASE_MAP: Record<string, string> = {
+        HELLO: "Hello!",
+        STOP: "Wait / Stop.",
+        YES: "Yes.",
+        GOOD: "Good, yes.",
+        OK: "Okay, I understand.",
+        I_LOVE_YOU: "I love you.",
+        CALL_ME: "Call me.",
+        HELP: "Please help.",
+        TWO: "Two / Peace.",
+        THREE: "Three.",
+        YOU: "You.",
+        THANK_YOU: "Thank you!",
+      };
+
+      const hintMatch = String(hand_summary || "").match(/localHint=([A-Z_]+)/);
+      let recognizedGloss: string | undefined = gloss_hint
+        ? String(gloss_hint).toUpperCase()
+        : hintMatch
+          ? hintMatch[1]
+          : undefined;
       let visionSentence: string | undefined;
       let visionConfidence: number | undefined;
       let visionModel: string | undefined;
 
-      if (ai && Array.isArray(frames_base64) && frames_base64.length > 0 && !gloss_hint) {
+      if (ai && Array.isArray(frames_base64) && frames_base64.length > 0 && !recognizedGloss) {
         try {
           const parts: any[] = frames_base64.slice(0, 3).map((img: string) => ({
             inlineData: {
@@ -961,7 +981,7 @@ async function startServer() {
             },
           }));
           parts.push({
-            text: `You are Vakhya's real-time ${signLanguage} sign language interpreter. Inspect these sequential webcam frames of a person signing (MediaPipe hand geometry: ${hand_summary || "active hands"}). Identify the ${signLanguage} gloss and concise natural English phrase. Only set hasSign to false if hands are completely absent or clearly resting idle with zero gesture.`,
+            text: `You are Vakhya's real-time ${signLanguage} sign language interpreter. Inspect these sequential webcam frames (MediaPipe hand geometry: ${hand_summary || "no landmarks"}). If hands are missing, blurry, blank, or not clearly performing an intentional ${signLanguage} sign, you MUST set hasSign to false and confidence below 0.5. Never guess random unrelated words. Only when a clear ${signLanguage} sign is shown, return its gloss, concise English phrase, and confidence (0..1).`,
           });
 
           const parsed = await callGeminiJson(parts, {
@@ -978,40 +998,30 @@ async function startServer() {
             },
           });
 
-          if (parsed?.hasSign && parsed?.gloss && parsed?.sentence && String(parsed.gloss).toUpperCase() !== "NONE") {
+          const conf = Number(parsed?.confidence ?? 0);
+          if (
+            parsed?.hasSign &&
+            conf >= 0.72 &&
+            parsed?.gloss &&
+            parsed?.sentence &&
+            String(parsed.gloss).toUpperCase() !== "NONE"
+          ) {
             recognizedGloss = String(parsed.gloss).trim().toUpperCase();
             visionSentence = String(parsed.sentence).trim();
-            visionConfidence = Number(parsed.confidence ?? 0.92);
+            visionConfidence = conf;
             visionModel = "vakhya-gemini-vision-3dcnn";
-          } else if (parsed && parsed.hasSign === false && !String(hand_summary || "").includes("localHint=")) {
+          } else {
             return res.json({
               recognized: false,
               gloss: "",
               sentence: "",
-              confidence: parsed.confidence ?? 0,
+              confidence: conf,
               model: "vakhya-gemini-vision",
             });
           }
         } catch (err: any) {
           console.log("[VAKHYA S2V] Fallback to pose classifier:", err?.message || "timeout");
         }
-      }
-
-      const PHRASE_MAP: Record<string, string> = {
-        HELLO: "Hello!",
-        STOP: "Wait / Stop.",
-        YES: "Yes.",
-        GOOD: "Good, yes.",
-        I_LOVE_YOU: "I love you.",
-        CALL_ME: "Call me.",
-        HELP: "Please help.",
-        TWO: "Two / Peace.",
-        YOU: "You.",
-        THANK_YOU: "Thank you!",
-      };
-      const hintMatch = String(hand_summary || "").match(/localHint=([A-Z_]+)/);
-      if (hintMatch && !recognizedGloss) {
-        recognizedGloss = hintMatch[1];
       }
 
       if (pythonAvailable) {
