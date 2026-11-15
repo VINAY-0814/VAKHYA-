@@ -1274,31 +1274,19 @@ Strict output rules:
             audioWavBase64: null,
           });
         } catch (err: any) {
-          console.log("[VAKHYA S2V] Open-vocab vision transient error:", err?.message || "timeout");
-          return res.json({
-            recognized: false,
-            isInterim: false,
-            isUnknown: false,
-            needsClarification: true,
-            status: "clarify",
-            clarificationPrompt:
-              "Sign recognition timed out briefly. Please sign that again clearly.",
-            gloss: "",
-            pendingGlossStream: [],
-            sentence: "",
-            confidence: 0,
-            model: "vakhya-continuous-isl-vision",
-            audioWavBase64: null,
-          });
+          console.log("[VAKHYA S2V] Open-vocab vision transient error, falling back to kinematic classifier:", err?.message || "timeout");
         }
       }
 
-      // Secondary / Non-camera pose-only or explicit gloss_hint path (kinematic classifier + unknown rejection)
+      // Secondary / Non-camera pose-only or Vision-fallback path (42-sign kinematic classifier + unknown rejection)
       const hintMatch = String(hand_summary || "").match(/localHint=([A-Z_]+)/);
       const localHintGloss = hintMatch ? hintMatch[1] : undefined;
       const explicitHint: string | undefined = gloss_hint
         ? String(gloss_hint).toUpperCase()
         : undefined;
+      const summaryStr = String(hand_summary || "");
+      const hasRealMediaPipeHands =
+        summaryStr === "" || /^hands=[12]\b/.test(summaryStr);
 
       if (pythonAvailable) {
         try {
@@ -1313,7 +1301,7 @@ Strict output rules:
           const pyGloss = String(s2v.recognized_gloss || "").toUpperCase();
 
           if (!pyRecognized && !explicitHint && !localHintGloss) {
-            const isUnk = s2v.status === "unknown" || pyGloss === "UNKNOWN";
+            const isUnk = (s2v.status === "unknown" || pyGloss === "UNKNOWN") && hasRealMediaPipeHands;
             return res.json({
               recognized: false,
               isInterim: false,

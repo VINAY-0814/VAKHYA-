@@ -583,6 +583,9 @@ export class WebcamSignTracker {
           );
 
           const localSign = classifyLocalSign(analyzedHands, motionEnergy);
+          if (localSign && localSign.confidence >= 0.80) {
+            summaryParts.push(`localHint=${localSign.gloss}`);
+          }
           const rightElbow =
             this.cachedBodyPose.rightElbowAngle ||
             Math.round(Math.max(25, Math.min(130, 120 - rw[1] * 85)));
@@ -625,55 +628,36 @@ export class WebcamSignTracker {
           };
         }
       } catch {
-        // fall through to pixel motion tracker
+        // fall through to no active hands
       }
     }
 
-    // 3. Motion centroid fallback when MediaPipe has no active hand detections
+    // 3. No real hands detected in frame: NEVER synthesize fake hands from shirt/face/talking motion!
     this.prevRw = null;
     this.prevLw = null;
-    const rActive = Boolean(rightCentroid);
-    const lActive = Boolean(leftCentroid);
-    const rwPos: [number, number, number] = rightCentroid
-      ? [rightCentroid[0], rightCentroid[1], 0.12]
-      : [0.68, 0.60, 0.05];
-    const lwPos: [number, number, number] = leftCentroid
-      ? [leftCentroid[0], leftCentroid[1], 0.08]
-      : [0.35, 0.72, 0.0];
-
-    const syntheticHands: Array<Array<{ x: number; y: number; z: number }>> = [];
-    const handedness: string[] = [];
-    if (rightCentroid) {
-      syntheticHands.push(buildHandFromCentroid(rightCentroid[0], rightCentroid[1]));
-      handedness.push("Right");
-    }
-    if (leftCentroid) {
-      syntheticHands.push(buildHandFromCentroid(leftCentroid[0], leftCentroid[1]));
-      handedness.push("Left");
-    }
 
     return {
-      engine: "cv-motion-kinematic",
-      landmarksList: syntheticHands,
-      handedness,
+      engine: sharedHandLandmarker ? "mediapipe-hand-landmarker" : "cv-motion-kinematic",
+      landmarksList: [],
+      handedness: [],
       poseFrame: {
         t: relT,
-        right_wrist: rwPos,
-        left_wrist: lwPos,
-        right_open: rActive ? Math.min(1, 0.4 + motionEnergy / 25) : 0.3,
-        left_open: lActive ? Math.min(1, 0.4 + motionEnergy / 25) : 0.3,
-        elbow_angle: Math.round(Math.max(30, Math.min(125, 115 - rwPos[1] * 80))),
-        left_elbow_angle: Math.round(Math.max(30, Math.min(125, 115 - lwPos[1] * 80))),
-        right_active: rActive,
-        left_active: lActive,
+        right_wrist: [0.68, 0.60, 0.05],
+        left_wrist: [0.35, 0.72, 0.0],
+        right_open: 0.3,
+        left_open: 0.3,
+        elbow_angle: 75,
+        left_elbow_angle: 85,
+        right_active: false,
+        left_active: false,
         facial_cues: this.cachedFacialCues,
       },
       bodyPose: this.cachedBodyPose,
       facialCues: this.cachedFacialCues,
       motionEnergy,
-      hasActiveHands: rActive || lActive,
-      handSummary: handedness.length > 0 ? `MotionHands:${handedness.join(",")}` : "NoActiveHands",
-      fingerSignature: "fallback",
+      hasActiveHands: false,
+      handSummary: sharedHandLandmarker ? "NoActiveHands" : "LandmarkerInitializing",
+      fingerSignature: "none",
       detectedLocalSign: null,
     };
   }

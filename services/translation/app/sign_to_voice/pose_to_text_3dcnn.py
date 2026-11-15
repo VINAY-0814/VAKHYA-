@@ -307,20 +307,22 @@ class PoseToText3DCNN:
         for i in range(n):
             qf, rf = q_frames[i], r_frames[i]
 
-            # Spatial right wrist (x, y, z)
-            drw = math.sqrt(
+            # Spatial right wrist (x, y, z) with 0.045 human-framing tolerance deadband
+            drw_raw = math.sqrt(
                 (qf["rw"][0] - rf["rw"][0]) ** 2 * 1.4
                 + (qf["rw"][1] - rf["rw"][1]) ** 2 * 1.4
                 + (qf["rw"][2] - rf["rw"][2]) ** 2 * 0.65
             )
+            drw = max(0.0, drw_raw - 0.045)
             frame_pos = drw
 
             if use_left_pos:
-                dlw = math.sqrt(
+                dlw_raw = math.sqrt(
                     (qf["lw"][0] - rf["lw"][0]) ** 2 * 1.35
                     + (qf["lw"][1] - rf["lw"][1]) ** 2 * 1.35
                     + (qf["lw"][2] - rf["lw"][2]) ** 2 * 0.60
                 )
+                dlw = max(0.0, dlw_raw - 0.045)
                 frame_pos = 0.52 * drw + 0.48 * dlw
 
             pos_err += frame_pos
@@ -366,7 +368,7 @@ class PoseToText3DCNN:
                 sum(abs(a - b) for a, b in zip(q["two_hand_dists"], r["two_hand_dists"])) / n
             ) * 0.65
 
-        finger_weight = 0.68 if use_fingers else 0.0
+        finger_weight = 0.78 if use_fingers else 0.0
         pos_weight = 1.05 if use_fingers else 1.25
         open_weight = 0.35 if use_fingers else 0.70
 

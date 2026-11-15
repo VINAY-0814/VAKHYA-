@@ -1283,7 +1283,8 @@ export default function InCallScreen({
         if (res.ok && (data.isUnknown || data.status === "unknown" || data.needsClarification)) {
           pendingGlossStreamRef.current = [];
           setInterimGlossText("");
-          if (now - lastClarifyTsRef.current > 4500) {
+          const hadRealHands = /^hands=[12]\b/.test(handSummary);
+          if (hadRealHands && now - lastClarifyTsRef.current > 4500) {
             lastClarifyTsRef.current = now;
             const msg =
               data.clarificationPrompt ||
@@ -1293,7 +1294,7 @@ export default function InCallScreen({
             setClarificationPrompt(msg);
             setTimeout(() => {
               setClarificationPrompt((prev) => (prev === msg ? null : prev));
-            }, 4800);
+            }, 3500);
           }
           return;
         }
