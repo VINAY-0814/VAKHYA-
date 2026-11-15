@@ -194,6 +194,7 @@ export default function InCallScreen({
   const [recentCaptions, setRecentCaptions] = useState<Array<{ id: number; speaker: string; text: string; gloss?: string }>>([]);
   const [captionSpeaker, setCaptionSpeaker] = useState("");
   const [outgoingCaption, setOutgoingCaption] = useState("");
+  const [interimGlossText, setInterimGlossText] = useState("");
   const [clarificationPrompt, setClarificationPrompt] = useState<string | null>(null);
   const [lastRecognizedSign, setLastRecognizedSign] = useState("");
   const [handDetected, setHandDetected] = useState(false);
@@ -237,6 +238,7 @@ export default function InCallScreen({
   const lastPoseInferRef = useRef<number>(0);
   const lastClarifyTsRef = useRef<number>(0);
   const recentSignedSentencesRef = useRef<string[]>([]);
+  const pendingGlossStreamRef = useRef<string[]>([]);
   const lastSentSignRef = useRef<{ sentence: string; ts: number }>({ sentence: "", ts: 0 });
   const lastSpokenRef = useRef<{ text: string; ts: number }>({ text: "", ts: 0 });
   const pendingSpeechRef = useRef<{ text: string; audioWavBase64?: string | null } | null>(null);
@@ -1242,7 +1244,8 @@ export default function InCallScreen({
     const triggerInCallPoseToVoice = async (
       poses: PoseKeyframe[],
       framesBase64: string[],
-      handSummary: string
+      handSummary: string,
+      phraseBoundary: boolean
     ) => {
       if (isInferringPoseRef.current || poses.length < 4 || framesBase64.length === 0) return;
       isInferringPoseRef.current = true;
@@ -1263,6 +1266,9 @@ export default function InCallScreen({
             hand_summary: handSummary,
             signLanguage: activeSignLanguage,
             recentContext: recentSignedSentencesRef.current.slice(-3),
+            pendingGlossStream: pendingGlossStreamRef.current,
+            continuousMode: true,
+            phraseBoundary,
             voicePreset: ttsOpts.voiceName,
             pitch: ttsOpts.pitch,
             speed: ttsOpts.speed,
@@ -1271,7 +1277,15 @@ export default function InCallScreen({
         const data = await res.json();
         const now = Date.now();
 
+        if (res.ok && data.isInterim && Array.isArray(data.pendingGlossStream)) {
+          pendingGlossStreamRef.current = data.pendingGlossStream;
+          setInterimGlossText(data.pendingGlossStream.join(" · "));
+          return;
+        }
+
         if (res.ok && data.needsClarification) {
+          pendingGlossStreamRef.current = [];
+          setInterimGlossText("");
           if (now - lastClarifyTsRef.current > 4500) {
             lastClarifyTsRef.current = now;
             const msg =
@@ -1286,6 +1300,8 @@ export default function InCallScreen({
         }
 
         if (res.ok && data.recognized !== false && data.sentence) {
+          pendingGlossStreamRef.current = [];
+          setInterimGlossText("");
           setClarificationPrompt(null);
           const isDup =
             lastSentSignRef.current.sentence.toLowerCase() === String(data.sentence).toLowerCase() &&
@@ -1337,7 +1353,7 @@ export default function InCallScreen({
       }
     };
 
-    const flushSignBuffer = () => {
+    const flushSignBuffer = (phraseBoundary: boolean) => {
       const snapshot = [...poseBufferRef.current];
       const snaps = [...frameSnapsRef.current];
       if (localVideoRef.current && trackerRef.current) {
@@ -1349,11 +1365,17 @@ export default function InCallScreen({
       }
       const summary = handSummaryRef.current;
 
-      poseBufferRef.current = [];
-      frameSnapsRef.current = [];
+      // Keep a short co-articulation overlap when mid-stream so signs at chunk edges stay intact
+      if (!phraseBoundary) {
+        poseBufferRef.current = poseBufferRef.current.slice(-3);
+        frameSnapsRef.current = frameSnapsRef.current.slice(-2);
+      } else {
+        poseBufferRef.current = [];
+        frameSnapsRef.current = [];
+      }
       peakMotionRef.current = 0;
       quietFramesAfterMotionRef.current = 0;
-      void triggerInCallPoseToVoice(snapshot, snaps, summary);
+      void triggerInCallPoseToVoice(snapshot, snaps, summary, phraseBoundary);
     };
 
     const renderLoop = () => {
@@ -1425,7 +1447,7 @@ export default function InCallScreen({
               now - lastPoseInferRef.current > 1600
             ) {
               lastPoseInferRef.current = now;
-              flushSignBuffer();
+              flushSignBuffer(phraseCompleted);
             }
           } else if (
             !detection.hasActiveHands &&
@@ -1434,7 +1456,7 @@ export default function InCallScreen({
             now - lastPoseInferRef.current > 1600
           ) {
             lastPoseInferRef.current = now;
-            flushSignBuffer();
+            flushSignBuffer(true);
           }
         }
       } else if (frameCount % 10 === 0) {
@@ -1756,6 +1778,15 @@ export default function InCallScreen({
                   <p className="text-xs text-slate-300 text-center">
                     Speak or sign clearly to your camera — live translations appear here.
                   </p>
+                )}
+
+                {interimGlossText && (
+                  <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-[#9E7BFF]/25 text-[#D5C3FF]">
+                    <p className="text-[11px] font-mono truncate">
+                      <span className="text-[#9E7BFF] font-semibold">Continuous gloss stream: </span>
+                      {interimGlossText}…
+                    </p>
+                  </div>
                 )}
 
                 {clarificationPrompt && (

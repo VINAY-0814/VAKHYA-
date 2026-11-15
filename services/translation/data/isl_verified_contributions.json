@@ -1,0 +1,4450 @@
+[
+  {
+    "id": "isl_namaste",
+    "gloss": "NAMASTE",
+    "english": "Hello / Greetings",
+    "category": "Greetings",
+    "handedness": "two_hand",
+    "signType": "static",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Palms pressed together at chest/chin level with slight head bow",
+    "verificationStatus": "verified",
+    "sampleCount": 28,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_hello",
+    "gloss": "HELLO",
+    "english": "Hello / Hi",
+    "category": "Greetings",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "head",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Open hand raised near temple/forehead moving outward",
+    "verificationStatus": "verified",
+    "sampleCount": 34,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.68,
+          0.34,
+          0.05
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 1,
+        "left_open": 0.4,
+        "elbow_angle": 45
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.76,
+          0.24,
+          0.12
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 1,
+        "left_open": 0.4,
+        "elbow_angle": 75
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.84,
+          0.28,
+          0.15
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 1,
+        "left_open": 0.4,
+        "elbow_angle": 90
+      }
+    ]
+  },
+  {
+    "id": "isl_good_morning",
+    "gloss": "GOOD_MORNING",
+    "english": "Good morning",
+    "category": "Greetings",
+    "handedness": "two_hand",
+    "signType": "compound",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Good sign from chin followed by rising sun hand arc",
+    "verificationStatus": "verified",
+    "sampleCount": 24,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_good_afternoon",
+    "gloss": "GOOD_AFTERNOON",
+    "english": "Good afternoon",
+    "category": "Greetings",
+    "handedness": "two_hand",
+    "signType": "compound",
+    "spatialAnchor": "head",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Good sign followed by flat hand overhead",
+    "verificationStatus": "verified",
+    "sampleCount": 18,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_good_night",
+    "gloss": "GOOD_NIGHT",
+    "english": "Good night",
+    "category": "Greetings",
+    "handedness": "two_hand",
+    "signType": "compound",
+    "spatialAnchor": "face",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Good sign followed by palms closing beside tilted cheek",
+    "verificationStatus": "verified",
+    "sampleCount": 21,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_goodbye",
+    "gloss": "GOODBYE",
+    "english": "Goodbye / Bye",
+    "category": "Greetings",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "head",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Raised open palm waving side-to-side",
+    "verificationStatus": "verified",
+    "sampleCount": 26,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.74,
+          0.3,
+          0.1
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 1,
+        "left_open": 0.4,
+        "elbow_angle": 80
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.74,
+          0.32,
+          0.12
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0.2,
+        "left_open": 0.4,
+        "elbow_angle": 80
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.74,
+          0.3,
+          0.1
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 1,
+        "left_open": 0.4,
+        "elbow_angle": 80
+      }
+    ]
+  },
+  {
+    "id": "isl_welcome",
+    "gloss": "WELCOME",
+    "english": "Welcome",
+    "category": "Greetings",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Open palms sweep smoothly inward toward torso",
+    "verificationStatus": "verified",
+    "sampleCount": 19,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_thank_you",
+    "gloss": "THANK_YOU",
+    "english": "Thank you",
+    "category": "Greetings",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chin",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Flat hand moves forward from chin/lips toward listener",
+    "verificationStatus": "verified",
+    "sampleCount": 35,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.52,
+          0.28,
+          0.06
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 1,
+        "left_open": 0.3,
+        "elbow_angle": 40
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.58,
+          0.38,
+          0.18
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 1,
+        "left_open": 0.3,
+        "elbow_angle": 70
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.64,
+          0.46,
+          0.26
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 1,
+        "left_open": 0.3,
+        "elbow_angle": 95
+      }
+    ]
+  },
+  {
+    "id": "isl_please",
+    "gloss": "PLEASE",
+    "english": "Please",
+    "category": "Greetings",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Flat open hand circles gently on center of chest",
+    "verificationStatus": "verified",
+    "sampleCount": 29,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.52,
+          0.48,
+          0.08
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 1,
+        "left_open": 0.3,
+        "elbow_angle": 60
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.46,
+          0.52,
+          0.1
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 1,
+        "left_open": 0.3,
+        "elbow_angle": 55
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.54,
+          0.46,
+          0.08
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 1,
+        "left_open": 0.3,
+        "elbow_angle": 65
+      }
+    ]
+  },
+  {
+    "id": "isl_sorry",
+    "gloss": "SORRY",
+    "english": "Sorry / Apologize",
+    "category": "Greetings",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Closed fist rubs circularly over chest with apologetic expression",
+    "verificationStatus": "verified",
+    "sampleCount": 25,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.5,
+          0.48,
+          0.08
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0,
+        "left_open": 0.3,
+        "elbow_angle": 55
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.46,
+          0.52,
+          0.08
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0,
+        "left_open": 0.3,
+        "elbow_angle": 50
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.52,
+          0.48,
+          0.08
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0,
+        "left_open": 0.3,
+        "elbow_angle": 60
+      }
+    ]
+  },
+  {
+    "id": "isl_excuse_me",
+    "gloss": "EXCUSE_ME",
+    "english": "Excuse me",
+    "category": "Greetings",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Fingertips brush lightly across opposite open palm",
+    "verificationStatus": "verified",
+    "sampleCount": 16,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_nice_to_meet_you",
+    "gloss": "NICE_TO_MEET_YOU",
+    "english": "Nice to meet you",
+    "category": "Greetings",
+    "handedness": "two_hand",
+    "signType": "compound",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Good + both index fingers meet upright + point",
+    "verificationStatus": "verified",
+    "sampleCount": 22,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_i_me",
+    "gloss": "I_ME",
+    "english": "I / Me",
+    "category": "Pronouns & People",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Index finger taps or points to center of chest",
+    "verificationStatus": "verified",
+    "sampleCount": 30,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_you",
+    "gloss": "YOU",
+    "english": "You",
+    "category": "Pronouns & People",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Index finger points forward toward conversation partner",
+    "verificationStatus": "verified",
+    "sampleCount": 28,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.58,
+          0.48,
+          0.12
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0.25,
+        "left_open": 0.3,
+        "elbow_angle": 65
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.58,
+          0.46,
+          0.26
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0.25,
+        "left_open": 0.3,
+        "elbow_angle": 95
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.58,
+          0.48,
+          0.2
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0.25,
+        "left_open": 0.3,
+        "elbow_angle": 80
+      }
+    ]
+  },
+  {
+    "id": "isl_we_us",
+    "gloss": "WE_US",
+    "english": "We / Us",
+    "category": "Pronouns & People",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Index finger arcs across from chest toward group and back",
+    "verificationStatus": "verified",
+    "sampleCount": 18,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_they_them",
+    "gloss": "THEY_THEM",
+    "english": "They / Them",
+    "category": "Pronouns & People",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Index finger sweeps horizontally in third-person space",
+    "verificationStatus": "verified",
+    "sampleCount": 14,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_he_she",
+    "gloss": "HE_SHE",
+    "english": "He / She",
+    "category": "Pronouns & People",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Index points to side neutral signing space",
+    "verificationStatus": "verified",
+    "sampleCount": 16,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_my_mine",
+    "gloss": "MY_MINE",
+    "english": "My / Mine",
+    "category": "Pronouns & People",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Flat open palm placed firmly against chest",
+    "verificationStatus": "verified",
+    "sampleCount": 22,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_your",
+    "gloss": "YOUR",
+    "english": "Your / Yours",
+    "category": "Pronouns & People",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Flat open palm faces outward toward addressee",
+    "verificationStatus": "verified",
+    "sampleCount": 19,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_man",
+    "gloss": "MAN",
+    "english": "Man",
+    "category": "Pronouns & People",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "face",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Thumb and index mime mustache line on upper lip",
+    "verificationStatus": "verified",
+    "sampleCount": 20,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_woman",
+    "gloss": "WOMAN",
+    "english": "Woman",
+    "category": "Pronouns & People",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "face",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Index finger touches side of nose / nose-stud location",
+    "verificationStatus": "verified",
+    "sampleCount": 21,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_boy",
+    "gloss": "BOY",
+    "english": "Boy",
+    "category": "Pronouns & People",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "face",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Mustache cue + lower height indicator",
+    "verificationStatus": "verified",
+    "sampleCount": 15,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_girl",
+    "gloss": "GIRL",
+    "english": "Girl",
+    "category": "Pronouns & People",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "face",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Nose-stud cue + lower height indicator",
+    "verificationStatus": "verified",
+    "sampleCount": 15,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_person",
+    "gloss": "PERSON",
+    "english": "Person",
+    "category": "Pronouns & People",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "upper_body",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Flat P/open hands trace down sides of torso",
+    "verificationStatus": "verified",
+    "sampleCount": 14,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_mother",
+    "gloss": "MOTHER",
+    "english": "Mother",
+    "category": "Family",
+    "handedness": "two_hand",
+    "signType": "compound",
+    "spatialAnchor": "face",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Woman sign at nose followed by respectful two-hand gesture",
+    "verificationStatus": "verified",
+    "sampleCount": 23,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_father",
+    "gloss": "FATHER",
+    "english": "Father",
+    "category": "Family",
+    "handedness": "one_hand",
+    "signType": "compound",
+    "spatialAnchor": "face",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Man sign at upper lip with respectful forehead tap",
+    "verificationStatus": "verified",
+    "sampleCount": 23,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_brother",
+    "gloss": "BROTHER",
+    "english": "Brother",
+    "category": "Family",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Man cue + two index fingers aligned parallel side-by-side",
+    "verificationStatus": "verified",
+    "sampleCount": 17,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_sister",
+    "gloss": "SISTER",
+    "english": "Sister",
+    "category": "Family",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Woman cue + parallel index fingers side-by-side",
+    "verificationStatus": "verified",
+    "sampleCount": 17,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_family",
+    "gloss": "FAMILY",
+    "english": "Family",
+    "category": "Family",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Two curved hands sweep outward forming an inclusive circle",
+    "verificationStatus": "verified",
+    "sampleCount": 24,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.54,
+          0.44,
+          0.14
+        ],
+        "left_wrist": [
+          0.46,
+          0.44,
+          0.14
+        ],
+        "right_open": 0.7,
+        "left_open": 0.7,
+        "elbow_angle": 65
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.68,
+          0.44,
+          0.2
+        ],
+        "left_wrist": [
+          0.32,
+          0.44,
+          0.2
+        ],
+        "right_open": 0.7,
+        "left_open": 0.7,
+        "elbow_angle": 85
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.54,
+          0.44,
+          0.24
+        ],
+        "left_wrist": [
+          0.46,
+          0.44,
+          0.24
+        ],
+        "right_open": 0.7,
+        "left_open": 0.7,
+        "elbow_angle": 75
+      }
+    ]
+  },
+  {
+    "id": "isl_friend",
+    "gloss": "FRIEND",
+    "english": "Friend",
+    "category": "Family",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Shaking/hooking index fingers or clasping hands at chest",
+    "verificationStatus": "verified",
+    "sampleCount": 25,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.54,
+          0.5,
+          0.14
+        ],
+        "left_wrist": [
+          0.46,
+          0.5,
+          0.14
+        ],
+        "right_open": 0.3,
+        "left_open": 0.3,
+        "elbow_angle": 65
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.48,
+          0.52,
+          0.16
+        ],
+        "left_wrist": [
+          0.52,
+          0.48,
+          0.16
+        ],
+        "right_open": 0.3,
+        "left_open": 0.3,
+        "elbow_angle": 60
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.54,
+          0.5,
+          0.14
+        ],
+        "left_wrist": [
+          0.46,
+          0.5,
+          0.14
+        ],
+        "right_open": 0.3,
+        "left_open": 0.3,
+        "elbow_angle": 65
+      }
+    ]
+  },
+  {
+    "id": "isl_baby",
+    "gloss": "BABY",
+    "english": "Baby / Child",
+    "category": "Family",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Arms cradled horizontally rocking gently side-to-side",
+    "verificationStatus": "verified",
+    "sampleCount": 18,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_husband",
+    "gloss": "HUSBAND",
+    "english": "Husband",
+    "category": "Family",
+    "handedness": "two_hand",
+    "signType": "compound",
+    "spatialAnchor": "face",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Man sign + clasping hands / ring finger tap",
+    "verificationStatus": "community_review",
+    "sampleCount": 8,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_wife",
+    "gloss": "WIFE",
+    "english": "Wife",
+    "category": "Family",
+    "handedness": "two_hand",
+    "signType": "compound",
+    "spatialAnchor": "face",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Woman sign + clasping hands / ring finger tap",
+    "verificationStatus": "community_review",
+    "sampleCount": 8,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_teacher",
+    "gloss": "TEACHER",
+    "english": "Teacher",
+    "category": "Family",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "head",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Hands draw knowledge outward from temples + person marker",
+    "verificationStatus": "verified",
+    "sampleCount": 16,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_what",
+    "gloss": "WHAT",
+    "english": "What?",
+    "category": "Questions",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Open palms upturned moving slightly apart with furrowed brows",
+    "verificationStatus": "verified",
+    "sampleCount": 31,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.64,
+          0.5,
+          0.18
+        ],
+        "left_wrist": [
+          0.36,
+          0.5,
+          0.18
+        ],
+        "right_open": 1,
+        "left_open": 1,
+        "elbow_angle": 85
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.7,
+          0.5,
+          0.18
+        ],
+        "left_wrist": [
+          0.3,
+          0.5,
+          0.18
+        ],
+        "right_open": 1,
+        "left_open": 1,
+        "elbow_angle": 90
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.64,
+          0.5,
+          0.18
+        ],
+        "left_wrist": [
+          0.36,
+          0.5,
+          0.18
+        ],
+        "right_open": 1,
+        "left_open": 1,
+        "elbow_angle": 85
+      }
+    ]
+  },
+  {
+    "id": "isl_where",
+    "gloss": "WHERE",
+    "english": "Where?",
+    "category": "Questions",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Raised index finger waves left-right with questioning brows",
+    "verificationStatus": "verified",
+    "sampleCount": 28,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.68,
+          0.4,
+          0.16
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0.25,
+        "left_open": 0.3,
+        "elbow_angle": 75
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.74,
+          0.4,
+          0.16
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0.25,
+        "left_open": 0.3,
+        "elbow_angle": 80
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.64,
+          0.4,
+          0.16
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0.25,
+        "left_open": 0.3,
+        "elbow_angle": 70
+      }
+    ]
+  },
+  {
+    "id": "isl_when",
+    "gloss": "WHEN",
+    "english": "When?",
+    "category": "Questions",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Index circles around opposite stationary index tip",
+    "verificationStatus": "verified",
+    "sampleCount": 20,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_who",
+    "gloss": "WHO",
+    "english": "Who?",
+    "category": "Questions",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chin",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Index finger circles around mouth/chin with furrowed brows",
+    "verificationStatus": "verified",
+    "sampleCount": 21,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_why",
+    "gloss": "WHY",
+    "english": "Why?",
+    "category": "Questions",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "head",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Fingers touch forehead and pull outward into Y/open shape",
+    "verificationStatus": "verified",
+    "sampleCount": 20,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_how",
+    "gloss": "HOW",
+    "english": "How?",
+    "category": "Questions",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Curved knuckles touch and roll open with upturned palms",
+    "verificationStatus": "verified",
+    "sampleCount": 24,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.54,
+          0.52,
+          0.14
+        ],
+        "left_wrist": [
+          0.46,
+          0.52,
+          0.14
+        ],
+        "right_open": 0.5,
+        "left_open": 0.5,
+        "elbow_angle": 70
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.6,
+          0.48,
+          0.18
+        ],
+        "left_wrist": [
+          0.4,
+          0.48,
+          0.18
+        ],
+        "right_open": 0.9,
+        "left_open": 0.9,
+        "elbow_angle": 80
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.62,
+          0.5,
+          0.2
+        ],
+        "left_wrist": [
+          0.38,
+          0.5,
+          0.2
+        ],
+        "right_open": 1,
+        "left_open": 1,
+        "elbow_angle": 85
+      }
+    ]
+  },
+  {
+    "id": "isl_how_much",
+    "gloss": "HOW_MUCH",
+    "english": "How much / How many?",
+    "category": "Questions",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Closed fingers flick open upward repeatedly with questioning face",
+    "verificationStatus": "verified",
+    "sampleCount": 17,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_which",
+    "gloss": "WHICH",
+    "english": "Which?",
+    "category": "Questions",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Alternating thumbs-up hands bounce up and down",
+    "verificationStatus": "verified",
+    "sampleCount": 14,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_how_are_you",
+    "gloss": "HOW_ARE_YOU",
+    "english": "How are you?",
+    "category": "Questions",
+    "handedness": "two_hand",
+    "signType": "compound",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "HOW gesture followed by pointing to listener with raised brows",
+    "verificationStatus": "verified",
+    "sampleCount": 27,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_yes",
+    "gloss": "YES",
+    "english": "Yes",
+    "category": "Responses",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Closed fist nods forward/down once or twice (with head nod)",
+    "verificationStatus": "verified",
+    "sampleCount": 32,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.66,
+          0.42,
+          0.14
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0,
+        "left_open": 0.3,
+        "elbow_angle": 70
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.66,
+          0.5,
+          0.16
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0,
+        "left_open": 0.3,
+        "elbow_angle": 85
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.66,
+          0.42,
+          0.14
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0,
+        "left_open": 0.3,
+        "elbow_angle": 70
+      }
+    ]
+  },
+  {
+    "id": "isl_no",
+    "gloss": "NO",
+    "english": "No",
+    "category": "Responses",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Index and middle fingers snap onto thumb (with head shake)",
+    "verificationStatus": "verified",
+    "sampleCount": 31,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.66,
+          0.4,
+          0.15
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0.6,
+        "left_open": 0.3,
+        "elbow_angle": 75
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.66,
+          0.4,
+          0.15
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0.1,
+        "left_open": 0.3,
+        "elbow_angle": 75
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.66,
+          0.4,
+          0.15
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0.1,
+        "left_open": 0.3,
+        "elbow_angle": 75
+      }
+    ]
+  },
+  {
+    "id": "isl_ok",
+    "gloss": "OK",
+    "english": "Okay / Alright",
+    "category": "Responses",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Thumb and index form circle while remaining three fingers extend",
+    "verificationStatus": "verified",
+    "sampleCount": 29,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.66,
+          0.4,
+          0.16
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0.65,
+        "left_open": 0.3,
+        "elbow_angle": 75
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.66,
+          0.38,
+          0.18
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0.65,
+        "left_open": 0.3,
+        "elbow_angle": 75
+      }
+    ]
+  },
+  {
+    "id": "isl_wait",
+    "gloss": "WAIT",
+    "english": "Wait / One moment",
+    "category": "Responses",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Open upturned palms wiggle fingers gently in front of chest",
+    "verificationStatus": "verified",
+    "sampleCount": 25,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.64,
+          0.46,
+          0.14
+        ],
+        "left_wrist": [
+          0.36,
+          0.46,
+          0.14
+        ],
+        "right_open": 1,
+        "left_open": 1,
+        "elbow_angle": 75
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.66,
+          0.44,
+          0.16
+        ],
+        "left_wrist": [
+          0.34,
+          0.44,
+          0.16
+        ],
+        "right_open": 0.9,
+        "left_open": 0.9,
+        "elbow_angle": 80
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.64,
+          0.46,
+          0.14
+        ],
+        "left_wrist": [
+          0.36,
+          0.46,
+          0.14
+        ],
+        "right_open": 1,
+        "left_open": 1,
+        "elbow_angle": 75
+      }
+    ]
+  },
+  {
+    "id": "isl_stop",
+    "gloss": "STOP",
+    "english": "Stop",
+    "category": "Responses",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Dominant flat hand chops decisively onto non-dominant open palm",
+    "verificationStatus": "verified",
+    "sampleCount": 26,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.56,
+          0.42,
+          0.14
+        ],
+        "left_wrist": [
+          0.46,
+          0.56,
+          0.12
+        ],
+        "right_open": 1,
+        "left_open": 1,
+        "elbow_angle": 55
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.48,
+          0.54,
+          0.14
+        ],
+        "left_wrist": [
+          0.46,
+          0.56,
+          0.12
+        ],
+        "right_open": 1,
+        "left_open": 1,
+        "elbow_angle": 70
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.48,
+          0.54,
+          0.14
+        ],
+        "left_wrist": [
+          0.46,
+          0.56,
+          0.12
+        ],
+        "right_open": 1,
+        "left_open": 1,
+        "elbow_angle": 70
+      }
+    ]
+  },
+  {
+    "id": "isl_understand",
+    "gloss": "UNDERSTAND",
+    "english": "I understand",
+    "category": "Responses",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "head",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Closed hand near temple flicks index finger upward",
+    "verificationStatus": "verified",
+    "sampleCount": 24,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.6,
+          0.24,
+          0.08
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0,
+        "left_open": 0.3,
+        "elbow_angle": 45
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.6,
+          0.22,
+          0.08
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0.25,
+        "left_open": 0.3,
+        "elbow_angle": 45
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.6,
+          0.22,
+          0.08
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0.25,
+        "left_open": 0.3,
+        "elbow_angle": 45
+      }
+    ]
+  },
+  {
+    "id": "isl_not_understand",
+    "gloss": "NOT_UNDERSTAND",
+    "english": "I don't understand",
+    "category": "Responses",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "head",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Temple flick paired with clear head shake",
+    "verificationStatus": "verified",
+    "sampleCount": 20,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_repeat_again",
+    "gloss": "REPEAT_AGAIN",
+    "english": "Please repeat / Again",
+    "category": "Responses",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Bent hand arcs repeatedly into opposite flat palm",
+    "verificationStatus": "verified",
+    "sampleCount": 18,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_slow_down",
+    "gloss": "SLOW_DOWN",
+    "english": "Sign slowly please",
+    "category": "Responses",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "One hand glides slowly up the back of the opposite forearm",
+    "verificationStatus": "verified",
+    "sampleCount": 16,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_maybe",
+    "gloss": "MAYBE",
+    "english": "Maybe / Perhaps",
+    "category": "Responses",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Open palms balance alternately up and down like scales",
+    "verificationStatus": "community_review",
+    "sampleCount": 9,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_one",
+    "gloss": "ONE",
+    "english": "One (1)",
+    "category": "Time & Numbers",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Index finger extended upright",
+    "verificationStatus": "verified",
+    "sampleCount": 24,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_two",
+    "gloss": "TWO",
+    "english": "Two (2)",
+    "category": "Time & Numbers",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Index and middle fingers extended in V shape",
+    "verificationStatus": "verified",
+    "sampleCount": 24,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_three",
+    "gloss": "THREE",
+    "english": "Three (3)",
+    "category": "Time & Numbers",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Three fingers extended upright",
+    "verificationStatus": "verified",
+    "sampleCount": 22,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_four",
+    "gloss": "FOUR",
+    "english": "Four (4)",
+    "category": "Time & Numbers",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Four fingers extended with thumb folded across palm",
+    "verificationStatus": "verified",
+    "sampleCount": 20,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_five",
+    "gloss": "FIVE",
+    "english": "Five (5)",
+    "category": "Time & Numbers",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "All five fingers spread wide",
+    "verificationStatus": "verified",
+    "sampleCount": 22,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_ten",
+    "gloss": "TEN",
+    "english": "Ten (10)",
+    "category": "Time & Numbers",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Thumbs-up fist shakes gently or flashes two 5-hands",
+    "verificationStatus": "verified",
+    "sampleCount": 18,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_hundred",
+    "gloss": "HUNDRED",
+    "english": "Hundred (100)",
+    "category": "Time & Numbers",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "ISL index draws C/curve outward",
+    "verificationStatus": "community_review",
+    "sampleCount": 7,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_time",
+    "gloss": "TIME",
+    "english": "Time",
+    "category": "Time & Numbers",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Index finger taps top of opposite wrist like a wristwatch",
+    "verificationStatus": "verified",
+    "sampleCount": 28,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_today",
+    "gloss": "TODAY",
+    "english": "Today / Now",
+    "category": "Time & Numbers",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Both flat/Y palms press gently downward directly in front of body",
+    "verificationStatus": "verified",
+    "sampleCount": 25,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_tomorrow",
+    "gloss": "TOMORROW",
+    "english": "Tomorrow",
+    "category": "Time & Numbers",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "face",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Thumb at cheek arcs forward into tomorrow space",
+    "verificationStatus": "verified",
+    "sampleCount": 24,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_yesterday",
+    "gloss": "YESTERDAY",
+    "english": "Yesterday",
+    "category": "Time & Numbers",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "face",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Thumb at cheek arcs backward over shoulder",
+    "verificationStatus": "verified",
+    "sampleCount": 21,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_morning",
+    "gloss": "MORNING",
+    "english": "Morning",
+    "category": "Time & Numbers",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Dominant arm rises over opposite forearm like sunrise",
+    "verificationStatus": "verified",
+    "sampleCount": 20,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.54,
+          0.58,
+          0.12
+        ],
+        "left_wrist": [
+          0.44,
+          0.54,
+          0.12
+        ],
+        "right_open": 1,
+        "left_open": 1,
+        "elbow_angle": 75
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.56,
+          0.46,
+          0.14
+        ],
+        "left_wrist": [
+          0.44,
+          0.54,
+          0.12
+        ],
+        "right_open": 1,
+        "left_open": 1,
+        "elbow_angle": 60
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.58,
+          0.34,
+          0.14
+        ],
+        "left_wrist": [
+          0.44,
+          0.54,
+          0.12
+        ],
+        "right_open": 1,
+        "left_open": 1,
+        "elbow_angle": 45
+      }
+    ]
+  },
+  {
+    "id": "isl_night",
+    "gloss": "NIGHT",
+    "english": "Night",
+    "category": "Time & Numbers",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Bent hand arcs downward over opposite horizontal forearm",
+    "verificationStatus": "verified",
+    "sampleCount": 19,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_week",
+    "gloss": "WEEK",
+    "english": "Week",
+    "category": "Time & Numbers",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Index slides across opposite open palm",
+    "verificationStatus": "verified",
+    "sampleCount": 14,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_month",
+    "gloss": "MONTH",
+    "english": "Month",
+    "category": "Time & Numbers",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Index slides downward along opposite upright index finger",
+    "verificationStatus": "community_review",
+    "sampleCount": 7,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_year",
+    "gloss": "YEAR",
+    "english": "Year",
+    "category": "Time & Numbers",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Top fist orbits forward once around bottom fist",
+    "verificationStatus": "community_review",
+    "sampleCount": 8,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_help",
+    "gloss": "HELP",
+    "english": "Help",
+    "category": "Health & Emergency",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Fist/thumbs-up resting on flat palm lifts upward together",
+    "verificationStatus": "verified",
+    "sampleCount": 34,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.54,
+          0.58,
+          0.12
+        ],
+        "left_wrist": [
+          0.46,
+          0.6,
+          0.12
+        ],
+        "right_open": 0.1,
+        "left_open": 1,
+        "elbow_angle": 65
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.54,
+          0.48,
+          0.14
+        ],
+        "left_wrist": [
+          0.46,
+          0.5,
+          0.14
+        ],
+        "right_open": 0.1,
+        "left_open": 1,
+        "elbow_angle": 50
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.54,
+          0.4,
+          0.16
+        ],
+        "left_wrist": [
+          0.46,
+          0.42,
+          0.16
+        ],
+        "right_open": 0.1,
+        "left_open": 1,
+        "elbow_angle": 40
+      }
+    ]
+  },
+  {
+    "id": "isl_emergency",
+    "gloss": "EMERGENCY",
+    "english": "Emergency / Urgent",
+    "category": "Health & Emergency",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Both hands shake rapidly near chest/shoulders with urgent expression",
+    "verificationStatus": "verified",
+    "sampleCount": 24,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.72,
+          0.36,
+          0.16
+        ],
+        "left_wrist": [
+          0.28,
+          0.36,
+          0.16
+        ],
+        "right_open": 0.8,
+        "left_open": 0.8,
+        "elbow_angle": 85
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.62,
+          0.32,
+          0.2
+        ],
+        "left_wrist": [
+          0.38,
+          0.32,
+          0.2
+        ],
+        "right_open": 0.8,
+        "left_open": 0.8,
+        "elbow_angle": 65
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.72,
+          0.36,
+          0.16
+        ],
+        "left_wrist": [
+          0.28,
+          0.36,
+          0.16
+        ],
+        "right_open": 0.8,
+        "left_open": 0.8,
+        "elbow_angle": 85
+      }
+    ]
+  },
+  {
+    "id": "isl_doctor",
+    "gloss": "DOCTOR",
+    "english": "Doctor",
+    "category": "Health & Emergency",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Fingers tap pulse point on opposite inner wrist",
+    "verificationStatus": "verified",
+    "sampleCount": 28,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.48,
+          0.54,
+          0.14
+        ],
+        "left_wrist": [
+          0.42,
+          0.58,
+          0.14
+        ],
+        "right_open": 0.5,
+        "left_open": 0.9,
+        "elbow_angle": 60
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.44,
+          0.57,
+          0.14
+        ],
+        "left_wrist": [
+          0.42,
+          0.58,
+          0.14
+        ],
+        "right_open": 0.5,
+        "left_open": 0.9,
+        "elbow_angle": 55
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.48,
+          0.54,
+          0.14
+        ],
+        "left_wrist": [
+          0.42,
+          0.58,
+          0.14
+        ],
+        "right_open": 0.5,
+        "left_open": 0.9,
+        "elbow_angle": 60
+      }
+    ]
+  },
+  {
+    "id": "isl_hospital",
+    "gloss": "HOSPITAL",
+    "english": "Hospital",
+    "category": "Health & Emergency",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "upper_body",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Finger traces Red Cross (+) on upper arm/shoulder",
+    "verificationStatus": "verified",
+    "sampleCount": 26,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.32,
+          0.38,
+          0.08
+        ],
+        "left_wrist": [
+          0.3,
+          0.7,
+          0
+        ],
+        "right_open": 0.4,
+        "left_open": 0.3,
+        "elbow_angle": 50
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.32,
+          0.46,
+          0.08
+        ],
+        "left_wrist": [
+          0.3,
+          0.7,
+          0
+        ],
+        "right_open": 0.4,
+        "left_open": 0.3,
+        "elbow_angle": 55
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.28,
+          0.42,
+          0.08
+        ],
+        "left_wrist": [
+          0.3,
+          0.7,
+          0
+        ],
+        "right_open": 0.4,
+        "left_open": 0.3,
+        "elbow_angle": 50
+      }
+    ]
+  },
+  {
+    "id": "isl_pain",
+    "gloss": "PAIN",
+    "english": "Pain / Ache",
+    "category": "Health & Emergency",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Two index fingers jab toward each other with pained expression",
+    "verificationStatus": "verified",
+    "sampleCount": 27,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.58,
+          0.48,
+          0.15
+        ],
+        "left_wrist": [
+          0.42,
+          0.48,
+          0.15
+        ],
+        "right_open": 0.3,
+        "left_open": 0.3,
+        "elbow_angle": 65
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.53,
+          0.48,
+          0.17
+        ],
+        "left_wrist": [
+          0.47,
+          0.48,
+          0.17
+        ],
+        "right_open": 0.3,
+        "left_open": 0.3,
+        "elbow_angle": 60
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.58,
+          0.48,
+          0.15
+        ],
+        "left_wrist": [
+          0.42,
+          0.48,
+          0.15
+        ],
+        "right_open": 0.3,
+        "left_open": 0.3,
+        "elbow_angle": 65
+      }
+    ]
+  },
+  {
+    "id": "isl_medicine",
+    "gloss": "MEDICINE",
+    "english": "Medicine / Tablet",
+    "category": "Health & Emergency",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Middle finger twists into center of opposite upturned palm",
+    "verificationStatus": "verified",
+    "sampleCount": 23,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.5,
+          0.52,
+          0.12
+        ],
+        "left_wrist": [
+          0.45,
+          0.56,
+          0.12
+        ],
+        "right_open": 0.4,
+        "left_open": 1,
+        "elbow_angle": 60
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.47,
+          0.55,
+          0.13
+        ],
+        "left_wrist": [
+          0.45,
+          0.56,
+          0.12
+        ],
+        "right_open": 0.4,
+        "left_open": 1,
+        "elbow_angle": 55
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.5,
+          0.52,
+          0.12
+        ],
+        "left_wrist": [
+          0.45,
+          0.56,
+          0.12
+        ],
+        "right_open": 0.4,
+        "left_open": 1,
+        "elbow_angle": 60
+      }
+    ]
+  },
+  {
+    "id": "isl_fever",
+    "gloss": "FEVER",
+    "english": "Fever",
+    "category": "Health & Emergency",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "head",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Back of hand checks forehead temperature",
+    "verificationStatus": "verified",
+    "sampleCount": 19,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_ambulance",
+    "gloss": "AMBULANCE",
+    "english": "Ambulance",
+    "category": "Health & Emergency",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "head",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Flashing roof-light hand opens/closes overhead + vehicle sign",
+    "verificationStatus": "community_review",
+    "sampleCount": 9,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_police",
+    "gloss": "POLICE",
+    "english": "Police",
+    "category": "Health & Emergency",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "C-hand or flat badge shape placed on upper left chest",
+    "verificationStatus": "verified",
+    "sampleCount": 18,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_accident",
+    "gloss": "ACCIDENT",
+    "english": "Accident",
+    "category": "Health & Emergency",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Two fists collide firmly in front of torso",
+    "verificationStatus": "verified",
+    "sampleCount": 17,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_breathe",
+    "gloss": "BREATHE",
+    "english": "Breathing / Difficulty",
+    "category": "Health & Emergency",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Open hands rise and fall on chest indicating breath",
+    "verificationStatus": "community_review",
+    "sampleCount": 8,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_dizzy",
+    "gloss": "DIZZY",
+    "english": "Dizzy / Faint",
+    "category": "Health & Emergency",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "face",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Claw hand circles slowly in front of face",
+    "verificationStatus": "needs_samples",
+    "sampleCount": 3,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_blood_pressure",
+    "gloss": "BLOOD_PRESSURE",
+    "english": "Blood pressure",
+    "category": "Health & Emergency",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "upper_body",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Hand wraps upper arm cuff + pumping squeeze",
+    "verificationStatus": "verified",
+    "sampleCount": 6,
+    "verifiedBy": "QA Verifier",
+    "updatedAt": "2026-11-15T18:07:49.130Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.6,
+          0.45,
+          0.1
+        ],
+        "left_wrist": [
+          0.4,
+          0.45,
+          0.1
+        ],
+        "right_open": 0.4,
+        "left_open": 0.5,
+        "elbow_angle": 65
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.58,
+          0.46,
+          0.12
+        ],
+        "left_wrist": [
+          0.42,
+          0.46,
+          0.12
+        ],
+        "right_open": 0.1,
+        "left_open": 0.5,
+        "elbow_angle": 60
+      }
+    ]
+  },
+  {
+    "id": "isl_water",
+    "gloss": "WATER",
+    "english": "Water",
+    "category": "Daily & Food",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chin",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "ISL drinking-cup/thumb gesture or W-tap at mouth/chin",
+    "verificationStatus": "verified",
+    "sampleCount": 33,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.52,
+          0.3,
+          0.08
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0.6,
+        "left_open": 0.3,
+        "elbow_angle": 45
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.5,
+          0.28,
+          0.06
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0.6,
+        "left_open": 0.3,
+        "elbow_angle": 40
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.52,
+          0.3,
+          0.08
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0.6,
+        "left_open": 0.3,
+        "elbow_angle": 45
+      }
+    ]
+  },
+  {
+    "id": "isl_food",
+    "gloss": "FOOD",
+    "english": "Food / Eat",
+    "category": "Daily & Food",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chin",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Bunched fingertips tap mouth cleanly",
+    "verificationStatus": "verified",
+    "sampleCount": 30,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.56,
+          0.36,
+          0.1
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0.2,
+        "left_open": 0.3,
+        "elbow_angle": 55
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.5,
+          0.27,
+          0.06
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0.2,
+        "left_open": 0.3,
+        "elbow_angle": 40
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.56,
+          0.36,
+          0.1
+        ],
+        "left_wrist": [
+          0.35,
+          0.72,
+          0
+        ],
+        "right_open": 0.2,
+        "left_open": 0.3,
+        "elbow_angle": 55
+      }
+    ]
+  },
+  {
+    "id": "isl_tea_chai",
+    "gloss": "TEA_CHAI",
+    "english": "Tea / Chai",
+    "category": "Daily & Food",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chin",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Miming lifting teacup from saucer toward lips",
+    "verificationStatus": "verified",
+    "sampleCount": 22,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_coffee",
+    "gloss": "COFFEE",
+    "english": "Coffee",
+    "category": "Daily & Food",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Top fist grinds circularly atop bottom fist",
+    "verificationStatus": "verified",
+    "sampleCount": 18,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_milk",
+    "gloss": "MILK",
+    "english": "Milk",
+    "category": "Daily & Food",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Closed fist squeezes open and shut twice",
+    "verificationStatus": "verified",
+    "sampleCount": 19,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_rice",
+    "gloss": "RICE",
+    "english": "Rice",
+    "category": "Daily & Food",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chin",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Pinched fingers gather and bring rice to mouth",
+    "verificationStatus": "community_review",
+    "sampleCount": 9,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_hungry",
+    "gloss": "HUNGRY",
+    "english": "Hungry",
+    "category": "Daily & Food",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Curved C-hand slides downward from throat to stomach",
+    "verificationStatus": "verified",
+    "sampleCount": 24,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_thirsty",
+    "gloss": "THIRSTY",
+    "english": "Thirsty",
+    "category": "Daily & Food",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chin",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Index finger strokes straight down throat",
+    "verificationStatus": "verified",
+    "sampleCount": 21,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_sleep",
+    "gloss": "SLEEP",
+    "english": "Sleep",
+    "category": "Daily & Food",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "face",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Open hand closes downward over eyes or rests under tilted cheek",
+    "verificationStatus": "verified",
+    "sampleCount": 23,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_washroom",
+    "gloss": "WASHROOM",
+    "english": "Washroom / Toilet",
+    "category": "Daily & Food",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Pinky or T-hand shakes slightly to signal washroom",
+    "verificationStatus": "verified",
+    "sampleCount": 20,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_clean",
+    "gloss": "CLEAN",
+    "english": "Clean",
+    "category": "Daily & Food",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Flat palm wipes smoothly across opposite upturned palm",
+    "verificationStatus": "verified",
+    "sampleCount": 15,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_cook",
+    "gloss": "COOK",
+    "english": "Cook",
+    "category": "Daily & Food",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Flat palm flips back and forth over opposite flat palm",
+    "verificationStatus": "community_review",
+    "sampleCount": 8,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_home",
+    "gloss": "HOME",
+    "english": "Home / House",
+    "category": "Travel & Places",
+    "handedness": "two_hand",
+    "signType": "static",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Two flat hands meet at fingertips forming pitched roof + walls",
+    "verificationStatus": "verified",
+    "sampleCount": 27,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_school",
+    "gloss": "SCHOOL",
+    "english": "School",
+    "category": "Travel & Places",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Open palms clap gently twice in front of torso",
+    "verificationStatus": "verified",
+    "sampleCount": 22,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_office",
+    "gloss": "OFFICE",
+    "english": "Office / Work",
+    "category": "Travel & Places",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Fists tap wrists/back of hand twice",
+    "verificationStatus": "verified",
+    "sampleCount": 21,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_market",
+    "gloss": "MARKET",
+    "english": "Market / Shop",
+    "category": "Travel & Places",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Money/buy palm sweeps outward toward stalls",
+    "verificationStatus": "verified",
+    "sampleCount": 15,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_train_station",
+    "gloss": "TRAIN_STATION",
+    "english": "Railway / Train",
+    "category": "Travel & Places",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Two-finger index/middle slides back and forth across opposite fingers",
+    "verificationStatus": "verified",
+    "sampleCount": 18,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_bus",
+    "gloss": "BUS",
+    "english": "Bus",
+    "category": "Travel & Places",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Hands grip and steer large vertical bus steering wheel",
+    "verificationStatus": "verified",
+    "sampleCount": 19,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_car",
+    "gloss": "CAR",
+    "english": "Car",
+    "category": "Travel & Places",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Hands steer standard circular car wheel",
+    "verificationStatus": "verified",
+    "sampleCount": 21,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_airport",
+    "gloss": "AIRPORT",
+    "english": "Airport / Flight",
+    "category": "Travel & Places",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "head",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "I-L-Y / airplane handshape glides smoothly upward diagonally",
+    "verificationStatus": "verified",
+    "sampleCount": 16,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_here",
+    "gloss": "HERE",
+    "english": "Here",
+    "category": "Travel & Places",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Open palms point/circle downward in immediate space",
+    "verificationStatus": "verified",
+    "sampleCount": 18,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_there",
+    "gloss": "THERE",
+    "english": "There",
+    "category": "Travel & Places",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Index finger points clearly toward distant location",
+    "verificationStatus": "verified",
+    "sampleCount": 18,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_left_right",
+    "gloss": "LEFT_RIGHT",
+    "english": "Left / Right direction",
+    "category": "Travel & Places",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Open hand steers decisively left or right",
+    "verificationStatus": "verified",
+    "sampleCount": 15,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_money",
+    "gloss": "MONEY",
+    "english": "Money / Rupees",
+    "category": "Banking & Shopping",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Thumb rubs across fingertips repeatedly",
+    "verificationStatus": "verified",
+    "sampleCount": 27,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_pay",
+    "gloss": "PAY",
+    "english": "Pay",
+    "category": "Banking & Shopping",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Index flicks forward off opposite flat palm",
+    "verificationStatus": "verified",
+    "sampleCount": 19,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_buy",
+    "gloss": "BUY",
+    "english": "Buy / Purchase",
+    "category": "Banking & Shopping",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Dominant hand slides money off opposite palm outward",
+    "verificationStatus": "verified",
+    "sampleCount": 18,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_bank",
+    "gloss": "BANK",
+    "english": "Bank",
+    "category": "Banking & Shopping",
+    "handedness": "two_hand",
+    "signType": "compound",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Money sign + roof/building sign",
+    "verificationStatus": "verified",
+    "sampleCount": 16,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_price_cost",
+    "gloss": "PRICE_COST",
+    "english": "Price / Cost",
+    "category": "Banking & Shopping",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Money sign + questioning brows",
+    "verificationStatus": "verified",
+    "sampleCount": 16,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_cheap",
+    "gloss": "CHEAP",
+    "english": "Cheap / Affordable",
+    "category": "Banking & Shopping",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Downward palm brush showing low value",
+    "verificationStatus": "community_review",
+    "sampleCount": 7,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_expensive",
+    "gloss": "EXPENSIVE",
+    "english": "Expensive / Costly",
+    "category": "Banking & Shopping",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Money hand lifts up dramatically with wide eyes",
+    "verificationStatus": "community_review",
+    "sampleCount": 8,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_upi_scan",
+    "gloss": "UPI_SCAN",
+    "english": "QR / UPI Payment",
+    "category": "Banking & Shopping",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Phone palm held steady while other hand scans QR square",
+    "verificationStatus": "community_review",
+    "sampleCount": 10,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_receipt",
+    "gloss": "RECEIPT",
+    "english": "Receipt / Bill",
+    "category": "Banking & Shopping",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Mime tearing printed paper slip from palm",
+    "verificationStatus": "needs_samples",
+    "sampleCount": 3,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_happy",
+    "gloss": "HAPPY",
+    "english": "Happy / Glad",
+    "category": "Emotions",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Open palms brush upward on chest with bright smile",
+    "verificationStatus": "verified",
+    "sampleCount": 28,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_sad",
+    "gloss": "SAD",
+    "english": "Sad",
+    "category": "Emotions",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "face",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Open hands slide gently down in front of downcast face",
+    "verificationStatus": "verified",
+    "sampleCount": 24,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_angry",
+    "gloss": "ANGRY",
+    "english": "Angry",
+    "category": "Emotions",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "face",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Clawed hand pulls away from furrowed face",
+    "verificationStatus": "verified",
+    "sampleCount": 19,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_love",
+    "gloss": "LOVE",
+    "english": "Love / Care",
+    "category": "Emotions",
+    "handedness": "two_hand",
+    "signType": "static",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Both fists crossed warmly over heart/chest",
+    "verificationStatus": "verified",
+    "sampleCount": 29,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_i_love_you",
+    "gloss": "I_LOVE_YOU",
+    "english": "I love you",
+    "category": "Emotions",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Thumb, index, and pinky extended simultaneously",
+    "verificationStatus": "verified",
+    "sampleCount": 35,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_tired",
+    "gloss": "TIRED",
+    "english": "Tired",
+    "category": "Emotions",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Fingertips on upper chest drop shoulders/hands downward",
+    "verificationStatus": "verified",
+    "sampleCount": 20,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_scared",
+    "gloss": "SCARED",
+    "english": "Scared / Afraid",
+    "category": "Emotions",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Closed hands spring open inward defensively toward chest",
+    "verificationStatus": "verified",
+    "sampleCount": 16,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_surprised",
+    "gloss": "SURPRISED",
+    "english": "Surprised",
+    "category": "Emotions",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "face",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Fingers snap open near eyes with raised eyebrows",
+    "verificationStatus": "community_review",
+    "sampleCount": 8,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_worried",
+    "gloss": "WORRIED",
+    "english": "Worried",
+    "category": "Emotions",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "head",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Alternating open hands fan near temples with worried brows",
+    "verificationStatus": "verified",
+    "sampleCount": 16,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_proud",
+    "gloss": "PROUD",
+    "english": "Proud",
+    "category": "Emotions",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Thumb slides upward along center of chest with lifted chin",
+    "verificationStatus": "community_review",
+    "sampleCount": 9,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_go",
+    "gloss": "GO",
+    "english": "Go",
+    "category": "Actions & Verbs",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Both index fingers rotate/propel forward smoothly",
+    "verificationStatus": "verified",
+    "sampleCount": 27,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_come",
+    "gloss": "COME",
+    "english": "Come",
+    "category": "Actions & Verbs",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Upright index finger or open palm beckons smoothly inward",
+    "verificationStatus": "verified",
+    "sampleCount": 27,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_give",
+    "gloss": "GIVE",
+    "english": "Give",
+    "category": "Actions & Verbs",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Pinched/cupped hand moves smoothly from chest toward recipient",
+    "verificationStatus": "verified",
+    "sampleCount": 22,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_take",
+    "gloss": "TAKE",
+    "english": "Take",
+    "category": "Actions & Verbs",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Open hand reaches forward and closes while pulling back",
+    "verificationStatus": "verified",
+    "sampleCount": 20,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_see_look",
+    "gloss": "SEE_LOOK",
+    "english": "See / Look",
+    "category": "Actions & Verbs",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "face",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "V-fingers point from eyes outward toward object",
+    "verificationStatus": "verified",
+    "sampleCount": 25,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_listen_hear",
+    "gloss": "LISTEN_HEAR",
+    "english": "Listen / Hear",
+    "category": "Actions & Verbs",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "head",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Cupped hand or index taps near ear",
+    "verificationStatus": "verified",
+    "sampleCount": 22,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_speak_talk",
+    "gloss": "SPEAK_TALK",
+    "english": "Speak / Talk",
+    "category": "Actions & Verbs",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chin",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Open fingers flutter forward from mouth",
+    "verificationStatus": "verified",
+    "sampleCount": 24,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_sign",
+    "gloss": "SIGN",
+    "english": "Sign (language)",
+    "category": "Actions & Verbs",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Both index fingers circle alternately in front of chest",
+    "verificationStatus": "verified",
+    "sampleCount": 26,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.62,
+          0.44,
+          0.14
+        ],
+        "left_wrist": [
+          0.38,
+          0.44,
+          0.14
+        ],
+        "right_open": 0.25,
+        "left_open": 0.25,
+        "elbow_angle": 65
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.58,
+          0.52,
+          0.18
+        ],
+        "left_wrist": [
+          0.42,
+          0.38,
+          0.14
+        ],
+        "right_open": 0.25,
+        "left_open": 0.25,
+        "elbow_angle": 75
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.62,
+          0.44,
+          0.14
+        ],
+        "left_wrist": [
+          0.38,
+          0.44,
+          0.14
+        ],
+        "right_open": 0.25,
+        "left_open": 0.25,
+        "elbow_angle": 65
+      }
+    ]
+  },
+  {
+    "id": "isl_call_phone",
+    "gloss": "CALL_PHONE",
+    "english": "Call / Phone",
+    "category": "Actions & Verbs",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "face",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Y-handshape (thumb + pinky) held beside ear and cheek",
+    "verificationStatus": "verified",
+    "sampleCount": 29,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_write",
+    "gloss": "WRITE",
+    "english": "Write",
+    "category": "Actions & Verbs",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Pinched pen-grip writes across opposite open palm",
+    "verificationStatus": "verified",
+    "sampleCount": 21,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_read",
+    "gloss": "READ",
+    "english": "Read",
+    "category": "Actions & Verbs",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "V-hand scans side-to-side across opposite open palm",
+    "verificationStatus": "verified",
+    "sampleCount": 22,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_learn",
+    "gloss": "LEARN",
+    "english": "Learn",
+    "category": "Actions & Verbs",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "head",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Hand gathers knowledge from opposite palm up to forehead",
+    "verificationStatus": "verified",
+    "sampleCount": 23,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_know",
+    "gloss": "KNOW",
+    "english": "Know",
+    "category": "Actions & Verbs",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "head",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Fingertips tap side of forehead smoothly",
+    "verificationStatus": "verified",
+    "sampleCount": 24,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_forgot",
+    "gloss": "FORGOT",
+    "english": "Forgot",
+    "category": "Actions & Verbs",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "head",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Open hand wipes across forehead closing into fist",
+    "verificationStatus": "verified",
+    "sampleCount": 18,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_india",
+    "gloss": "INDIA",
+    "english": "India",
+    "category": "Civic & India",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "head",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Thumb/index touches center forehead (bindi/tilak area) and arcs",
+    "verificationStatus": "verified",
+    "sampleCount": 25,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_aadhaar_id",
+    "gloss": "AADHAAR_ID",
+    "english": "Aadhaar / ID Card",
+    "category": "Civic & India",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Rectangle card shape held upright + thumb fingerprint tap",
+    "verificationStatus": "community_review",
+    "sampleCount": 9,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_government",
+    "gloss": "GOVERNMENT",
+    "english": "Government",
+    "category": "Civic & India",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "head",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Index circles forehead and touches temple firmly",
+    "verificationStatus": "verified",
+    "sampleCount": 14,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_sign_up_form",
+    "gloss": "SIGN_UP_FORM",
+    "english": "Form / Application",
+    "category": "Civic & India",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Flat paper palm + quick writing/check gestures",
+    "verificationStatus": "community_review",
+    "sampleCount": 7,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_internet_wifi",
+    "gloss": "INTERNET_WIFI",
+    "english": "Internet / Wi-Fi",
+    "category": "Civic & India",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Interlocked pinky/thumb or radiating wave arcs from head/space",
+    "verificationStatus": "verified",
+    "sampleCount": 16,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_video_call",
+    "gloss": "VIDEO_CALL",
+    "english": "Video call",
+    "category": "Civic & India",
+    "handedness": "two_hand",
+    "signType": "compound",
+    "spatialAnchor": "face",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Camera/screen rectangle + phone sign",
+    "verificationStatus": "verified",
+    "sampleCount": 22,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_message",
+    "gloss": "MESSAGE",
+    "english": "Message / Text",
+    "category": "Civic & India",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Thumbs mime typing + send flick forward",
+    "verificationStatus": "verified",
+    "sampleCount": 20,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_password",
+    "gloss": "PASSWORD",
+    "english": "Password / PIN",
+    "category": "Civic & India",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Finger-tap digits covered by shield palm",
+    "verificationStatus": "needs_samples",
+    "sampleCount": 4,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_train_ticket",
+    "gloss": "TRAIN_TICKET",
+    "english": "Ticket",
+    "category": "Civic & India",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "V-fingers pinch/punch edge of opposite flat palm",
+    "verificationStatus": "verified",
+    "sampleCount": 15,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_emergency_112",
+    "gloss": "EMERGENCY_112",
+    "english": "Emergency 112",
+    "category": "Civic & India",
+    "handedness": "two_hand",
+    "signType": "compound",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Emergency shake + digits 1-1-2",
+    "verificationStatus": "needs_samples",
+    "sampleCount": 3,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_good",
+    "gloss": "GOOD",
+    "english": "Good",
+    "category": "Descriptors",
+    "handedness": "one_hand",
+    "signType": "static",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Thumbs-up or open hand moving smoothly outward from chin",
+    "verificationStatus": "verified",
+    "sampleCount": 31,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.52,
+          0.28,
+          0.06
+        ],
+        "left_wrist": [
+          0.46,
+          0.56,
+          0.12
+        ],
+        "right_open": 1,
+        "left_open": 1,
+        "elbow_angle": 40
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.5,
+          0.42,
+          0.12
+        ],
+        "left_wrist": [
+          0.46,
+          0.56,
+          0.12
+        ],
+        "right_open": 1,
+        "left_open": 1,
+        "elbow_angle": 60
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.48,
+          0.54,
+          0.12
+        ],
+        "left_wrist": [
+          0.46,
+          0.56,
+          0.12
+        ],
+        "right_open": 1,
+        "left_open": 1,
+        "elbow_angle": 70
+      }
+    ]
+  },
+  {
+    "id": "isl_bad",
+    "gloss": "BAD",
+    "english": "Bad",
+    "category": "Descriptors",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chin",
+    "nonManual": {
+      "eyebrows": "down",
+      "mouth": "tense",
+      "headTilt": "none"
+    },
+    "islNotes": "Hand flips palm-down away from chin with frown",
+    "verificationStatus": "verified",
+    "sampleCount": 22,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_big",
+    "gloss": "BIG",
+    "english": "Big / Large",
+    "category": "Descriptors",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "Palms spread wide apart horizontally",
+    "verificationStatus": "verified",
+    "sampleCount": 19,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_small",
+    "gloss": "SMALL",
+    "english": "Small / Little",
+    "category": "Descriptors",
+    "handedness": "two_hand",
+    "signType": "static",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Palms or pinched thumb-index held close together",
+    "verificationStatus": "verified",
+    "sampleCount": 19,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_important",
+    "gloss": "IMPORTANT",
+    "english": "Important",
+    "category": "Descriptors",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "chest",
+    "nonManual": {
+      "eyebrows": "up",
+      "mouth": "smile",
+      "headTilt": "none"
+    },
+    "islNotes": "F-handshapes rise and meet upright in center",
+    "verificationStatus": "verified",
+    "sampleCount": 16,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_same",
+    "gloss": "SAME",
+    "english": "Same / Similar",
+    "category": "Descriptors",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Both index fingers move together side-by-side",
+    "verificationStatus": "verified",
+    "sampleCount": 17,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_different",
+    "gloss": "DIFFERENT",
+    "english": "Different",
+    "category": "Descriptors",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Crossed index fingers separate sharply outward",
+    "verificationStatus": "verified",
+    "sampleCount": 17,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_because",
+    "gloss": "BECAUSE",
+    "english": "Because",
+    "category": "Descriptors",
+    "handedness": "one_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "head",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Index touches forehead and pulls out into A-fist",
+    "verificationStatus": "community_review",
+    "sampleCount": 8,
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_finish_done",
+    "gloss": "FINISH_DONE",
+    "english": "Finished / Done",
+    "category": "Descriptors",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Open five-hands twist outward sharply from wrists",
+    "verificationStatus": "verified",
+    "sampleCount": 22,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z"
+  },
+  {
+    "id": "isl_name",
+    "gloss": "NAME",
+    "english": "Name",
+    "category": "Descriptors",
+    "handedness": "two_hand",
+    "signType": "dynamic",
+    "spatialAnchor": "neutral",
+    "nonManual": {
+      "eyebrows": "neutral",
+      "mouth": "neutral",
+      "headTilt": "none"
+    },
+    "islNotes": "Two H/U fingers tap across each other twice",
+    "verificationStatus": "verified",
+    "sampleCount": 28,
+    "verifiedBy": "Vakhya ISL Core",
+    "updatedAt": "2026-11-15T18:07:39.419Z",
+    "keyframes": [
+      {
+        "t": 0,
+        "right_wrist": [
+          0.56,
+          0.46,
+          0.14
+        ],
+        "left_wrist": [
+          0.44,
+          0.5,
+          0.14
+        ],
+        "right_open": 0.4,
+        "left_open": 0.4,
+        "elbow_angle": 65
+      },
+      {
+        "t": 0.5,
+        "right_wrist": [
+          0.52,
+          0.49,
+          0.14
+        ],
+        "left_wrist": [
+          0.44,
+          0.5,
+          0.14
+        ],
+        "right_open": 0.4,
+        "left_open": 0.4,
+        "elbow_angle": 60
+      },
+      {
+        "t": 1,
+        "right_wrist": [
+          0.56,
+          0.46,
+          0.14
+        ],
+        "left_wrist": [
+          0.44,
+          0.5,
+          0.14
+        ],
+        "right_open": 0.4,
+        "left_open": 0.4,
+        "elbow_angle": 65
+      }
+    ]
+  }
+]

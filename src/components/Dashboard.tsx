@@ -50,6 +50,7 @@ import { useTheme } from "./ThemeContext";
 import SignToSpeech from "./SignToSpeech";
 import SpeechToSign from "./SpeechToSign";
 import OtherScreens from "./OtherScreens";
+import IslDatasetStudio from "./IslDatasetStudio";
 
 // Import Phase 4 modular sub-tabs
 import ChatsTab from "./ChatsTab";
@@ -100,7 +101,7 @@ export default function Dashboard({ profile, onLogout }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<"chats" | "calls" | "translate" | "learn" | "profile">("chats");
   
   // Secondary routers inside specific tabs
-  const [activeTranslateMode, setActiveTranslateMode] = useState<"options" | "speech_to_sign" | "sign_to_speech" | "ocr" | "avatar_cust">("options");
+  const [activeTranslateMode, setActiveTranslateMode] = useState<"options" | "speech_to_sign" | "sign_to_speech" | "isl_dataset" | "ocr" | "avatar_cust">("options");
   const [activeLearnMode, setActiveLearnMode] = useState<"options" | "lessons" | "coach">("options");
   const [activeProfileMode, setActiveProfileMode] = useState<"options" | "voice" | "accessibility" | "privacy" | "sdk" | "uml">("options");
 
@@ -836,6 +837,23 @@ export default function Dashboard({ profile, onLogout }: DashboardProps) {
                       </span>
                     </button>
 
+                    {/* 1,000 ISL Lexicon & Continuous Lab card */}
+                    <button
+                      onClick={() => setActiveTranslateMode("isl_dataset")}
+                      className={`text-left p-6 ${theme.styles.glassDark} hover:border-[#22F3A6]/40 hover:shadow-[0_0_20px_rgba(34,243,166,0.12)] group transition-all md:col-span-2`}
+                    >
+                      <div className="p-3 bg-[#22F3A6]/10 rounded-2xl w-max mb-4 border border-[#22F3A6]/25">
+                        <Layers className="w-6 h-6 text-[#22F3A6]" />
+                      </div>
+                      <h4 className="font-black text-sm text-white">1,000 ISL Lexicon &amp; Continuous Signing Lab</h4>
+                      <p className="text-xs text-white/50 leading-relaxed mt-1.5">
+                        Browse verified Indian Sign Language (ISL) signs, record new landmark samples toward the 1,000-sign milestone, and test continuous multi-word signing streams.
+                      </p>
+                      <span className="text-[10px] font-bold text-[#22F3A6] group-hover:translate-x-1 transition-transform flex items-center gap-0.5 mt-4">
+                        Open ISL Dataset &amp; Lab <ChevronRight className="w-4 h-4" />
+                      </span>
+                    </button>
+
                     {/* Fullscreen Character customizer */}
                     <button
                       onClick={() => setActiveTranslateMode("avatar_cust")}
@@ -884,6 +902,7 @@ export default function Dashboard({ profile, onLogout }: DashboardProps) {
 
                     {activeTranslateMode === "speech_to_sign" && <SpeechToSign profile={currentUserProfile} />}
                     {activeTranslateMode === "sign_to_speech" && <SignToSpeech profile={currentUserProfile} />}
+                    {activeTranslateMode === "isl_dataset" && <IslDatasetStudio profile={currentUserProfile} />}
                     {activeTranslateMode === "ocr" && <OtherScreens profile={currentUserProfile} activeScreen="ocr" />}
                     
                     {/* Active Fullscreen 3D Avatar & Latency customizer */}

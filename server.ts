@@ -20,6 +20,7 @@ import { signalingHub } from "./backend/src/ws/signaling.js";
 import webRTCRouter from "./server/webrtc/routes.js";
 import { getOnlineSignalingPeers, startSignalingServer } from "./server/webrtc/signaling.js";
 import { startSocketIOSignaling } from "./server/webrtc/socket/socketServer.js";
+import { islLexiconRegistry } from "./server/isl/lexiconRegistry.js";
 
 dotenv.config();
 
@@ -979,6 +980,44 @@ async function startServer() {
     }
   );
 
+  // =========================================================================
+  // ISL 1,000 VERIFIED SIGNS LEXICON & CONTINUOUS DATASET APIs
+  // =========================================================================
+  app.get("/api/isl/lexicon", (req: Request, res: Response) => {
+    const search = typeof req.query.search === "string" ? req.query.search : undefined;
+    const category = typeof req.query.category === "string" ? req.query.category : undefined;
+    const status = typeof req.query.status === "string" ? req.query.status : undefined;
+    const limit = req.query.limit ? Number(req.query.limit) : 80;
+    const offset = req.query.offset ? Number(req.query.offset) : 0;
+    return res.json(islLexiconRegistry.query({ search, category, status, limit, offset }));
+  });
+
+  app.post(
+    "/api/isl/lexicon",
+    [
+      body("gloss").trim().notEmpty().withMessage("ISL gloss is required"),
+      body("english").trim().notEmpty().withMessage("English meaning is required"),
+    ],
+    validateRequest,
+    (req: Request, res: Response) => {
+      try {
+        const result = islLexiconRegistry.recordOrAddSign(req.body);
+        return res.status(result.isNew ? 201 : 200).json(result);
+      } catch (err: any) {
+        return res.status(400).json({ error: err?.message || "Failed to record ISL sign" });
+      }
+    }
+  );
+
+  app.patch("/api/isl/lexicon/:id/verify", (req: Request, res: Response) => {
+    const verifier = typeof req.body?.verifiedBy === "string" ? req.body.verifiedBy : "ISL Reviewer";
+    const result = islLexiconRegistry.verifyByIdOrGloss(req.params.id, verifier);
+    if (!result.entry) {
+      return res.status(404).json({ error: "ISL sign not found" });
+    }
+    return res.json(result);
+  });
+
   app.post(
     "/api/translate/pose-to-voice",
     [body("pose_sequence").isArray({ min: 1 }).withMessage("pose_sequence frames array is required")],
@@ -993,6 +1032,9 @@ async function startServer() {
         hand_summary,
         signLanguage = "ISL",
         recentContext,
+        pendingGlossStream,
+        continuousMode = false,
+        phraseBoundary = true,
         voicePreset,
       } = req.body;
 
@@ -1012,20 +1054,32 @@ async function startServer() {
       };
 
       const hasCameraFrames = Array.isArray(frames_base64) && frames_base64.length > 0;
+      const spatialCandidates = islLexiconRegistry.findSpatialCandidates(
+        pose_sequence,
+        String(hand_summary || ""),
+        6
+      );
 
-      // Primary: True Open-Vocabulary Multimodal Vision for ALL live camera gestures (never bypassed by fixed 12/32 word lists)
+      // Primary: True Open-Vocabulary Multimodal Vision + Continuous Signing Co-articulation
       if (ai && hasCameraFrames && !gloss_hint) {
         const sampledFrames: string[] = frames_base64.slice(0, 8);
         const contextLines = Array.isArray(recentContext) && recentContext.length > 0
           ? `Recent conversation context (prior turns): ${recentContext.slice(-3).map((s: any) => `"${String(s)}"`).join(" -> ")}.`
           : "No prior conversation turns yet.";
+        const pendingArr: string[] = Array.isArray(pendingGlossStream)
+          ? pendingGlossStream.map((g: any) => String(g).trim().toUpperCase()).filter(Boolean)
+          : [];
+        const streamLine =
+          pendingArr.length > 0
+            ? `Continuous signing buffer so far (uncommitted prior glosses in this same utterance): [${pendingArr.join(" -> ")}].`
+            : "Continuous signing buffer is currently empty.";
 
         const langFocus =
           String(signLanguage).toUpperCase() === "ASL"
             ? "American Sign Language (ASL)"
             : String(signLanguage).toUpperCase() === "AUTO"
               ? "Indian Sign Language (ISL) and American Sign Language (ASL)"
-              : "Indian Sign Language (ISL) — including two-handed regional/standard ISL signs, fingerspelling, and conversational grammar";
+              : "Indian Sign Language (ISL) — including two-handed regional/standard ISL signs, SOV/topic-comment grammar, fingerspelling, and conversational phrases";
 
         try {
           const parts: any[] = sampledFrames.map((img: string) => ({
@@ -1035,23 +1089,27 @@ async function startServer() {
             },
           }));
           parts.push({
-            text: `You are Vakhya's Open-Vocabulary Real-Time Sign Language Interpreter during a live video call.
+            text: `You are Vakhya's Open-Vocabulary Continuous Sign Language Interpreter during a live video call.
 Target sign system: ${langFocus}.
-You are receiving ${sampledFrames.length} chronological video frames spanning a gesture or conversational phrase (from start to end), plus MediaPipe hand-landmark telemetry: ${hand_summary || "no landmarks"}.
+You are receiving ${sampledFrames.length} chronological video frames spanning the latest sliding window (from start to end), plus MediaPipe hand-landmark telemetry: ${hand_summary || "no landmarks"}.
+${spatialCandidates.length > 0 ? `Verified ISL spatial/kinematic candidates near this posture (priors only — DO NOT restrict yourself to them): ${spatialCandidates.join(", ")}.` : ""}
+${streamLine}
 ${contextLines}
+Continuous signing mode: ${continuousMode ? "ACTIVE" : "STANDARD"}; Natural phrase boundary/pause reached: ${phraseBoundary ? "YES" : "NO (mid-stream chunk)"}.
 
 Analyze ALL multimodal cues holistically — DO NOT restrict yourself to any small predefined word list:
-1. Both hands & fingers: 1-hand and 2-hand configurations, symmetrical/asymmetrical interactions, palm orientation, fingerspelling, numbers.
-2. Continuous motion trajectory across Frame 1 -> Frame ${sampledFrames.length}: waving, tapping, circular paths, directional verbs (toward/away from signer or viewer), repeated beats.
-3. Facial expressions & non-manual markers (critical in ISL/ASL grammar): raised eyebrows (yes/no question), furrowed eyebrows (WH-question: what/where/when/who/why/how), head nod (affirmative), head shake (negative), smile, concern, lip/mouthing cues.
+1. Both hands & fingers: 1-hand and 2-hand configurations, co-articulation transitions between signs, palm orientation, fingerspelling, numbers.
+2. Continuous motion trajectory across Frame 1 -> Frame ${sampledFrames.length}: waving, tapping, circular paths, directional verbs, repeated beats.
+3. Facial expressions & non-manual markers (critical in ISL/ASL grammar): raised eyebrows (yes/no question), furrowed eyebrows (WH-question: what/where/when/who/why/how), head nod (affirmative), head shake (negative), smile, concern, mouthing.
 4. Upper-body & spatial anchors: forehead/temple, eyes, chin/mouth, chest/heart, shoulder, neutral signing space.
 
 Output rules:
-- status = "idle": No intentional signing (blank camera, resting hands, adjusting hair/glasses, accidental fidgeting, static background). Do not emit any phrase.
-- status = "clarify": The signer is visibly trying to sign, but the gesture is motion-blurred, partially cropped/out of frame, occluded, too fast/incomplete, or genuinely ambiguous (confidence < 0.65). NEVER guess an unrelated or random word! Set clarificationPrompt to one brief, friendly sentence asking them what to adjust (e.g., "I couldn't catch that clearly—please keep both hands and your face in frame and sign slightly slower.").
-- status = "recognized": Clear intentional sign, multi-word phrase, or full conversational sentence (confidence >= 0.65). Provide:
-  - gloss: UPPERCASE gloss sequence (e.g. "NAMASTE HOW YOU", "I NEED WATER PLEASE", "WHAT TIME MEETING")
-  - sentence: natural, grammatically complete spoken English (e.g. "Hello, how are you?", "I need some water, please.", "What time is the meeting?")
+- status = "idle": No intentional signing (blank camera, resting hands, adjusting hair/glasses, accidental fidgeting, static background).
+- status = "clarify": The signer is visibly trying to sign, but the gesture is motion-blurred, partially cropped/out of frame, occluded, too fast/incomplete, or genuinely ambiguous (confidence < 0.65). NEVER guess an unrelated random word! Set clarificationPrompt to one brief, friendly sentence asking them what to adjust.
+- status = "interim": ONLY when Continuous signing mode is ACTIVE, Natural phrase boundary reached is NO, and you clearly recognize 1+ gloss tokens in this window that look like the middle of an ongoing multi-sign sentence (e.g. "ME" or "TOMORROW HOSPITAL"). Set gloss to the newly seen gloss(es) and sentence to "" (do not finalize yet).
+- status = "recognized": Clear intentional sign, or the natural completion of a multi-sign continuous clause (always finalize if Natural phrase boundary reached is YES and intentional signing occurred with confidence >= 0.65). Combine any pending continuous glosses [${pendingArr.join(" ")}] with the newly observed signs cleanly into:
+  - gloss: full UPPERCASE gloss sequence (e.g. "ME TOMORROW HOSPITAL GO", "NAMASTE HOW YOU", "I NEED WATER PLEASE")
+  - sentence: natural, grammatically complete spoken English respecting ISL grammar (e.g. "I am going to the hospital tomorrow.", "Hello, how are you?")
   - nonManual: concise description of facial/head/body cues observed (or "neutral")
   - confidence: number between 0.0 and 1.0`,
           });
@@ -1061,7 +1119,7 @@ Output rules:
             responseSchema: {
               type: Type.OBJECT,
               properties: {
-                status: { type: Type.STRING, enum: ["recognized", "clarify", "idle"] },
+                status: { type: Type.STRING, enum: ["recognized", "interim", "clarify", "idle"] },
                 gloss: { type: Type.STRING },
                 sentence: { type: Type.STRING },
                 nonManual: { type: Type.STRING },
@@ -1077,8 +1135,32 @@ Output rules:
           const cleanSentence = String(parsed?.sentence || "").trim();
           const cleanGloss = String(parsed?.gloss || "").trim().toUpperCase();
 
+          if (status === "interim" && continuousMode && !phraseBoundary && conf >= 0.6 && cleanGloss && cleanGloss !== "NONE") {
+            const newTokens = cleanGloss.split(/\s+/).filter(Boolean);
+            const mergedStream = [...pendingArr];
+            for (const tok of newTokens) {
+              if (mergedStream[mergedStream.length - 1] !== tok) {
+                mergedStream.push(tok);
+              }
+            }
+            return res.json({
+              recognized: false,
+              isInterim: true,
+              needsClarification: false,
+              status: "interim",
+              gloss: cleanGloss,
+              pendingGlossStream: mergedStream.slice(-8),
+              sentence: "",
+              nonManual: String(parsed?.nonManual || "neutral"),
+              confidence: conf,
+              spatialCandidates,
+              model: "vakhya-continuous-isl-vision",
+              audioWavBase64: null,
+            });
+          }
+
           if (
-            status === "recognized" &&
+            (status === "recognized" || status === "interim") &&
             conf >= 0.65 &&
             cleanSentence &&
             cleanGloss !== "NONE"
@@ -1086,13 +1168,16 @@ Output rules:
             const audioWavBase64 = await synthesizeGeminiSpeechWav(cleanSentence, voicePreset);
             return res.json({
               recognized: true,
+              isInterim: false,
               needsClarification: false,
               status: "recognized",
               gloss: cleanGloss || "SIGN",
+              pendingGlossStream: [],
               sentence: cleanSentence,
               nonManual: String(parsed?.nonManual || "neutral"),
               confidence: conf,
-              model: "vakhya-open-vocab-gemini-vision",
+              spatialCandidates,
+              model: "vakhya-continuous-isl-vision",
               audioWavBase64,
             });
           }
@@ -1100,41 +1185,49 @@ Output rules:
           if (status === "clarify") {
             return res.json({
               recognized: false,
+              isInterim: false,
               needsClarification: true,
               status: "clarify",
               clarificationPrompt:
                 String(parsed?.clarificationPrompt || "").trim() ||
                 "That sign was a little unclear. Could you repeat it slightly slower with both hands and your face visible?",
               gloss: "",
+              pendingGlossStream: [],
               sentence: "",
               confidence: conf,
-              model: "vakhya-open-vocab-gemini-vision",
+              spatialCandidates,
+              model: "vakhya-continuous-isl-vision",
               audioWavBase64: null,
             });
           }
 
           return res.json({
             recognized: false,
+            isInterim: false,
             needsClarification: false,
             status: "idle",
             gloss: "",
+            pendingGlossStream: pendingArr,
             sentence: "",
             confidence: conf,
-            model: "vakhya-open-vocab-gemini-vision",
+            spatialCandidates,
+            model: "vakhya-continuous-isl-vision",
             audioWavBase64: null,
           });
         } catch (err: any) {
           console.log("[VAKHYA S2V] Open-vocab vision transient error:", err?.message || "timeout");
           return res.json({
             recognized: false,
+            isInterim: false,
             needsClarification: true,
             status: "clarify",
             clarificationPrompt:
               "Sign recognition timed out briefly. Please sign that again clearly.",
             gloss: "",
+            pendingGlossStream: [],
             sentence: "",
             confidence: 0,
-            model: "vakhya-open-vocab-gemini-vision",
+            model: "vakhya-continuous-isl-vision",
             audioWavBase64: null,
           });
         }

@@ -39,6 +39,7 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
   const [activeSignLang, setActiveSignLang] = useState<string>(
     profile.primarySignLanguage || "ISL"
   );
+  const [interimGlossStream, setInterimGlossStream] = useState<string[]>([]);
   const [clarificationPrompt, setClarificationPrompt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,6 +53,7 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
   const handSummaryRef = useRef<string>("");
   const lastAutoInferRef = useRef<number>(0);
   const recentSentencesRef = useRef<string[]>([]);
+  const pendingGlossStreamRef = useRef<string[]>([]);
   const lastSentRef = useRef<{ sentence: string; ts: number }>({ sentence: "", ts: 0 });
   const activeSignLangRef = useRef<string>(activeSignLang);
   activeSignLangRef.current = activeSignLang;
@@ -98,7 +100,8 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
   const inferPoseBuffer = async (
     poses: PoseKeyframe[],
     framesBase64: string[],
-    handSummary: string
+    handSummary: string,
+    phraseBoundary: boolean
   ) => {
     if (poses.length < 4 || framesBase64.length === 0 || isTranslating) return;
     setIsTranslating(true);
@@ -112,6 +115,9 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
           frames_base64: downsampleFrames(framesBase64, 6),
           hand_summary: handSummary,
           signLanguage: activeSignLangRef.current || "ISL",
+          continuousMode: true,
+          phraseBoundary,
+          pendingGlossStream: pendingGlossStreamRef.current,
           recentContext: recentSentencesRef.current.slice(-3),
           voicePreset: profile.voiceSettings.voiceName,
           pitch: profile.voiceSettings.pitch,
@@ -121,7 +127,17 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Sign-to-voice recognition failed");
 
+      if (data.isInterim && Array.isArray(data.pendingGlossStream)) {
+        pendingGlossStreamRef.current = data.pendingGlossStream;
+        setInterimGlossStream(data.pendingGlossStream);
+        setCurrentGlosses(data.pendingGlossStream.join(" "));
+        setClarificationPrompt(null);
+        return;
+      }
+
       if (data.needsClarification) {
+        pendingGlossStreamRef.current = [];
+        setInterimGlossStream([]);
         setClarificationPrompt(
           data.clarificationPrompt ||
             "Sign was unclear — please keep both hands and face in frame and sign slightly slower."
@@ -130,6 +146,8 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
       }
 
       if (data.recognized === false) return;
+      pendingGlossStreamRef.current = [];
+      setInterimGlossStream([]);
       setClarificationPrompt(null);
 
       if (data.gloss) setCurrentGlosses(data.gloss);
@@ -210,11 +228,16 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
             const snapshot = [...poseBufferRef.current];
             const snaps = [...frameSnapsRef.current];
             const summary = handSummaryRef.current;
-            poseBufferRef.current = [];
-            frameSnapsRef.current = [];
+            if (!phraseDone) {
+              poseBufferRef.current = poseBufferRef.current.slice(-3);
+              frameSnapsRef.current = frameSnapsRef.current.slice(-2);
+            } else {
+              poseBufferRef.current = [];
+              frameSnapsRef.current = [];
+            }
             peakMotion = 0;
             quietFrames = 0;
-            void inferPoseBuffer(snapshot, snaps, summary);
+            void inferPoseBuffer(snapshot, snaps, summary, phraseDone);
           }
         } else if (
           !detection.hasActiveHands &&
@@ -230,7 +253,7 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
           frameSnapsRef.current = [];
           peakMotion = 0;
           quietFrames = 0;
-          void inferPoseBuffer(snapshot, snaps, summary);
+          void inferPoseBuffer(snapshot, snaps, summary, true);
         }
       }
 
@@ -336,6 +359,12 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
           </button>
         </div>
       </div>
+
+      {interimGlossStream.length > 0 && (
+        <div className="p-3.5 bg-[#9E7BFF]/15 border border-[#9E7BFF]/35 rounded-xl text-xs font-mono text-[#E2D6FF]">
+          <strong>Continuous gloss stream:</strong> {interimGlossStream.join(" → ")} …
+        </div>
+      )}
 
       {clarificationPrompt && (
         <div className="p-4 bg-amber-500/10 border border-amber-500/35 rounded-xl flex items-center justify-between gap-3 text-amber-700 dark:text-amber-200 text-xs">
