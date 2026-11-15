@@ -296,7 +296,7 @@ export function startSignalingServer(server: Server) {
           }
 
           case "leave": {
-            handleClientDisconnect(senderIdentity, roomName);
+            handleRoomLeave(senderIdentity, roomName);
             break;
           }
 
@@ -304,19 +304,17 @@ export function startSignalingServer(server: Server) {
           case "answer":
           case "candidate": {
             // Relays direct WebRTC handshake packets to the target peer node
-            if (targetIdentity) {
-              const targetNode = connections.get(targetIdentity);
-              if (targetNode && targetNode.ws.readyState === WebSocket.OPEN) {
-                targetNode.ws.send(JSON.stringify({
-                  type,
-                  roomName,
-                  senderIdentity,
-                  senderName,
-                  payload,
-                }));
-              }
+            const targetNode = targetIdentity ? connections.get(targetIdentity) : undefined;
+            if (targetNode && targetNode.ws.readyState === WebSocket.OPEN) {
+              targetNode.ws.send(JSON.stringify({
+                type,
+                roomName,
+                senderIdentity,
+                senderName,
+                payload,
+              }));
             } else {
-              // Direct room-wide multicast if no specific Peer target is designated
+              // Direct room-wide multicast if no specific Peer target is designated or target reconnected
               broadcastToRoom(roomName, senderIdentity, msg);
             }
             break;
@@ -469,7 +467,30 @@ export function startSignalingServer(server: Server) {
     }
 
     /**
-     * Clean disconnect workflow
+     * Leave call room while keeping the persistent Dashboard signaling socket online
+     */
+    function handleRoomLeave(identity: string, room: string) {
+      if (room) {
+        roomManager.removeParticipant(room, identity);
+        broadcastToRoom(room, identity, {
+          type: "presence_left",
+          roomName: room,
+          senderIdentity: identity,
+        });
+      }
+      const conn = connections.get(identity);
+      if (conn && (!room || conn.roomName === room)) {
+        conn.roomName = "";
+        conn.lastActive = Date.now();
+      }
+      if (clientRoomName === room) {
+        clientRoomName = "";
+      }
+      console.log(`[VAKHYA WebRTC] Participant ${identity} left room ${room || "(none)"}.`);
+    }
+
+    /**
+     * Clean disconnect workflow when the underlying WebSocket actually closes
      */
     function handleClientDisconnect(identity: string, room: string) {
       if (room) {

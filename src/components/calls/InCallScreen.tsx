@@ -209,6 +209,8 @@ export default function InCallScreen({
   const remoteStreamRef = useRef<MediaStream | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const remoteIdentityRef = useRef<string>(remoteUser.identity || "");
+  const peerInRoomRef = useRef<boolean>(false);
+  const turnConfiguredRef = useRef<boolean>(false);
   const pendingIceRef = useRef<RTCIceCandidateInit[]>([]);
   const makingOfferRef = useRef(false);
   const ignoreOfferRef = useRef(false);
@@ -336,8 +338,11 @@ export default function InCallScreen({
       }
       if (event.track.kind === "video") {
         setHasRemoteVideo(true);
-        event.track.onmute = () => setHasRemoteVideo(false);
-        event.track.onunmute = () => setHasRemoteVideo(true);
+        event.track.onunmute = () => {
+          setHasRemoteVideo(true);
+          remoteVideoRef.current?.play().catch(() => {});
+        };
+        event.track.onended = () => setHasRemoteVideo(false);
       }
       setWebrtcStatus("Connected • Live WebRTC Media Active");
     };
@@ -353,32 +358,13 @@ export default function InCallScreen({
       }
     };
 
-    let didIceRestart = false;
-    pc.onconnectionstatechange = () => {
-      const st = pc.connectionState;
-      if (st === "connected") {
-        didIceRestart = false;
-        setWebrtcStatus("Connected • Encrypted Peer Media Active");
-      } else if (st === "connecting") {
-        setWebrtcStatus("Establishing P2P ICE connection...");
-      } else if (st === "failed" && !didIceRestart && remoteIdentityRef.current) {
-        didIceRestart = true;
-        setWebrtcStatus("Retrying connection via ICE/TURN relay...");
-        try {
-          pc.restartIce();
-          if (isInitiator || myIdentity < remoteIdentityRef.current) {
-            void sendOfferToPeer(remoteIdentityRef.current);
-          }
-        } catch {}
-      } else if (st === "disconnected" || st === "failed") {
-        setWebrtcStatus(`Peer connection ${st}`);
-        setHasRemoteVideo(false);
-      }
-    };
-
-    const sendOfferToPeer = async (targetId?: string) => {
+    const sendOfferToPeer = async (targetId?: string, forceRenegotiate = false) => {
       try {
         makingOfferRef.current = true;
+        if (forceRenegotiate && pc.signalingState === "have-local-offer") {
+          await pc.setLocalDescription({ type: "rollback" });
+        }
+        if (pc.signalingState !== "stable") return;
         const offer = await pc.createOffer();
         if (pc.signalingState !== "stable") return;
         await pc.setLocalDescription(offer);
@@ -395,8 +381,43 @@ export default function InCallScreen({
       }
     };
 
+    let didIceRestart = false;
+    pc.onconnectionstatechange = () => {
+      const st = pc.connectionState;
+      if (st === "connected") {
+        didIceRestart = false;
+        setWebrtcStatus("Connected • Encrypted Peer Media Active");
+      } else if (st === "connecting") {
+        setWebrtcStatus("Establishing P2P ICE connection...");
+      } else if (st === "failed" && !didIceRestart && remoteIdentityRef.current) {
+        didIceRestart = true;
+        setWebrtcStatus(
+          turnConfiguredRef.current
+            ? "Retrying connection via ICE/TURN relay..."
+            : "Retrying ICE (TURN_URLS not set on server — cross-network calls may need TURN)..."
+        );
+        try {
+          pc.restartIce();
+          if (peerInRoomRef.current && (isInitiator || myIdentity < remoteIdentityRef.current)) {
+            void sendOfferToPeer(remoteIdentityRef.current, true);
+          }
+        } catch {}
+      } else if (st === "disconnected" || st === "failed") {
+        setWebrtcStatus(
+          st === "failed" && !turnConfiguredRef.current
+            ? "Connection failed — add TURN_URLS/TURN_USERNAME/TURN_CREDENTIAL in Render Environment"
+            : `Peer connection ${st}`
+        );
+        setHasRemoteVideo(false);
+      }
+    };
+
     pc.onnegotiationneeded = async () => {
-      if (remoteIdentityRef.current && (isInitiator || myIdentity < remoteIdentityRef.current)) {
+      if (
+        peerInRoomRef.current &&
+        remoteIdentityRef.current &&
+        (isInitiator || myIdentity < remoteIdentityRef.current)
+      ) {
         await sendOfferToPeer(remoteIdentityRef.current);
       }
     };
@@ -405,36 +426,41 @@ export default function InCallScreen({
       if (cancelled) return;
       if (msg.roomName && msg.roomName !== activeRoomName) return;
 
-      if (msg.type === "joined_ack" && Array.isArray(msg.participants)) {
+      if ((msg.type === "joined_ack" || msg.type === "reconnected_ack") && Array.isArray(msg.participants)) {
         const other = msg.participants.find((p: any) => p.identity !== myIdentity);
         if (other) {
+          peerInRoomRef.current = true;
           remoteIdentityRef.current = other.identity;
           setWebrtcStatus(`Peer ${other.userName || remoteUser.name} in room • Handshaking...`);
           if (isInitiator || myIdentity < other.identity) {
-            await sendOfferToPeer(other.identity);
+            await sendOfferToPeer(other.identity, true);
           }
         } else {
+          peerInRoomRef.current = false;
           setWebrtcStatus(`Waiting for ${remoteUser.name} to join room...`);
         }
         return;
       }
 
       if (msg.type === "presence_joined" && msg.senderIdentity && msg.senderIdentity !== myIdentity) {
+        peerInRoomRef.current = true;
         remoteIdentityRef.current = msg.senderIdentity;
         setWebrtcStatus(`${msg.senderName || remoteUser.name} joined • Negotiating WebRTC...`);
         if (isInitiator || myIdentity < msg.senderIdentity) {
-          await sendOfferToPeer(msg.senderIdentity);
+          await sendOfferToPeer(msg.senderIdentity, true);
         }
         return;
       }
 
       if (msg.type === "presence_left") {
+        peerInRoomRef.current = false;
         setHasRemoteVideo(false);
         setWebrtcStatus(`${remoteUser.name} left the call`);
         return;
       }
 
       if (msg.type === "offer" && msg.payload?.description) {
+        peerInRoomRef.current = true;
         if (msg.senderIdentity) remoteIdentityRef.current = msg.senderIdentity;
         const polite = !isInitiator || myIdentity > (msg.senderIdentity || "");
         const offerCollision = makingOfferRef.current || pc.signalingState !== "stable";
@@ -532,9 +558,10 @@ export default function InCallScreen({
     // Load STUN/TURN ICE config dynamically from backend, acquire local media, and join room
     const startMedia = async () => {
       try {
-        const res = await fetch("/api/webrtc/ice-servers", { signal: AbortSignal.timeout(1000) });
+        const res = await fetch("/api/webrtc/ice-servers", { signal: AbortSignal.timeout(6000) });
         if (res.ok) {
           const data = await res.json();
+          turnConfiguredRef.current = Boolean(data.turnConfigured);
           if (Array.isArray(data.iceServers) && data.iceServers.length > 0 && !cancelled) {
             pc.setConfiguration({ iceServers: data.iceServers });
           }
@@ -542,6 +569,9 @@ export default function InCallScreen({
       } catch {
         // fallback to default Google STUN servers
       }
+
+      let hasVideoTrack = false;
+      let hasAudioTrack = false;
 
       try {
         let stream: MediaStream;
@@ -573,13 +603,25 @@ export default function InCallScreen({
         }
 
         stream.getTracks().forEach((track) => {
+          if (track.kind === "video") hasVideoTrack = true;
+          if (track.kind === "audio") hasAudioTrack = true;
           pc.addTrack(track, stream);
         });
       } catch (err) {
         console.warn("[WebRTC] Media devices unavailable:", err);
-        setWebrtcStatus("Signaling active (camera/mic permission required for media)");
+        setWebrtcStatus("Signaling active (camera/mic unavailable — receive-only mode)");
       } finally {
         if (!cancelled) {
+          // Ensure receive capability even if local webcam/mic is unavailable or denied
+          try {
+            if (!hasAudioTrack && !pc.getTransceivers().some((t) => t.receiver.track?.kind === "audio")) {
+              pc.addTransceiver("audio", { direction: "recvonly" });
+            }
+            if (!hasVideoTrack && !pc.getTransceivers().some((t) => t.receiver.track?.kind === "video")) {
+              pc.addTransceiver("video", { direction: "recvonly" });
+            }
+          } catch {}
+
           realtimeClient.send({
             type: "join",
             roomName: activeRoomName,
@@ -642,6 +684,16 @@ export default function InCallScreen({
       pcRef.current = null;
     };
   }, [activeRoomName]);
+
+  // Keep local PiP video bound whenever camera toggles on/off
+  useEffect(() => {
+    if (isCamOn && localVideoRef.current && localStreamRef.current) {
+      if (localVideoRef.current.srcObject !== localStreamRef.current) {
+        localVideoRef.current.srcObject = localStreamRef.current;
+      }
+      localVideoRef.current.play().catch(() => {});
+    }
+  }, [isCamOn, mediaReadyTick]);
 
   // Live mute toggle on existing tracks
   useEffect(() => {

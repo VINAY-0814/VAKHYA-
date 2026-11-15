@@ -30,6 +30,8 @@ class RealtimeSignalingClient {
   } | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  private pendingQueue: Record<string, any>[] = [];
+  private activeRoom: { roomName: string; senderName: string } | null = null;
 
   getIdentity(): string {
     if (!this.identity) {
@@ -64,6 +66,19 @@ class RealtimeSignalingClient {
 
     ws.onopen = () => {
       this.registerUser();
+      if (this.activeRoom) {
+        this.sendImmediate({
+          type: "reconnect",
+          roomName: this.activeRoom.roomName,
+          senderIdentity: this.identity,
+          senderName: this.activeRoom.senderName || this.userMeta?.name || "Vakhya User",
+        });
+      }
+      if (this.pendingQueue.length > 0) {
+        const queued = [...this.pendingQueue];
+        this.pendingQueue = [];
+        queued.forEach((item) => this.sendImmediate(item));
+      }
       if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = setInterval(() => {
         this.send({ type: "heartbeat", senderIdentity: this.identity });
@@ -90,7 +105,7 @@ class RealtimeSignalingClient {
         if (this.userMeta) {
           this.connect(this.userMeta);
         }
-      }, 2000);
+      }, 1500);
     };
 
     ws.onerror = () => {
@@ -100,7 +115,7 @@ class RealtimeSignalingClient {
 
   private registerUser() {
     if (!this.userMeta) return;
-    this.send({
+    this.sendImmediate({
       type: "register_user",
       senderIdentity: this.identity,
       senderName: this.userMeta.name,
@@ -113,14 +128,7 @@ class RealtimeSignalingClient {
     });
   }
 
-  subscribe(listener: Listener): () => void {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
-  }
-
-  send(msg: Record<string, any>) {
+  private sendImmediate(msg: Record<string, any>) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(
         JSON.stringify({
@@ -130,6 +138,36 @@ class RealtimeSignalingClient {
         })
       );
       return true;
+    }
+    return false;
+  }
+
+  subscribe(listener: Listener): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  send(msg: Record<string, any>) {
+    if (msg.type === "join" && msg.roomName) {
+      this.activeRoom = {
+        roomName: msg.roomName,
+        senderName: msg.senderName || this.userMeta?.name || "Vakhya User",
+      };
+    } else if (msg.type === "leave" && msg.roomName && this.activeRoom?.roomName === msg.roomName) {
+      this.activeRoom = null;
+    }
+
+    if (this.sendImmediate(msg)) {
+      return true;
+    }
+
+    if (msg.type !== "heartbeat") {
+      if (this.pendingQueue.length >= 40) {
+        this.pendingQueue.shift();
+      }
+      this.pendingQueue.push(msg);
     }
     return false;
   }
@@ -144,6 +182,8 @@ class RealtimeSignalingClient {
       this.heartbeatTimer = null;
     }
     this.userMeta = null;
+    this.activeRoom = null;
+    this.pendingQueue = [];
     if (this.ws) {
       this.ws.close();
       this.ws = null;
