@@ -34,6 +34,7 @@ const ai =
 const GEMINI_MODEL_CANDIDATES = [
   "gemini-3.1-flash-lite-preview",
   "gemini-3-flash-preview",
+  "gemini-3.1-flash-lite",
   "gemini-4-hydrogen",
 ] as const;
 let preferredGeminiModel: string | null = null;
@@ -54,7 +55,7 @@ async function callGeminiJson(contents: any, config: Record<string, any>): Promi
         contents,
         config: {
           ...config,
-          abortSignal: AbortSignal.timeout(10000),
+          abortSignal: AbortSignal.timeout(5000),
         },
       });
       preferredGeminiModel = model;
@@ -76,6 +77,73 @@ async function callGeminiJson(contents: any, config: Record<string, any>): Promi
     }
   }
   throw lastError;
+}
+
+const ttsAudioCache = new Map<string, string>();
+
+function mapVoicePresetToGeminiVoice(preset?: string): string {
+  const lower = String(preset || "").toLowerCase();
+  if (lower.includes("calm") && lower.includes("female")) return "Zephyr";
+  if (lower.includes("female")) return "Kore";
+  if (lower.includes("crisp") && lower.includes("male")) return "Puck";
+  if (lower.includes("male")) return "Charon";
+  return "Kore";
+}
+
+async function synthesizeGeminiSpeechWav(
+  text: string,
+  voicePreset?: string
+): Promise<string | null> {
+  if (!ai) return null;
+  const clean = String(text || "").trim();
+  if (!clean) return null;
+
+  const voiceName = mapVoicePresetToGeminiVoice(voicePreset);
+  const cacheKey = `${voiceName}:${clean.toLowerCase()}`;
+  const cached = ttsAudioCache.get(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3.8-flash-lite-tts",
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: clean,
+              speechMetadata: {
+                style: "Clear, natural conversational speech",
+              },
+            },
+          ],
+        },
+      ],
+      config: {
+        responseModalities: ["AUDIO"],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName },
+          },
+        },
+        abortSignal: AbortSignal.timeout(4500),
+      },
+    });
+
+    const base64Audio =
+      response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
+    if (base64Audio) {
+      if (ttsAudioCache.size >= 40) {
+        const oldest = ttsAudioCache.keys().next().value;
+        if (oldest) ttsAudioCache.delete(oldest);
+      }
+      ttsAudioCache.set(cacheKey, base64Audio);
+    }
+    return base64Audio;
+  } catch (err: any) {
+    console.warn("[VAKHYA TTS] Gemini TTS failed:", err?.message || "unknown");
+    return null;
+  }
 }
 
 async function waitForHealth(url: string, timeoutMs = 8000): Promise<boolean> {
@@ -725,33 +793,38 @@ async function startServer() {
     async (req: Request, res: Response) => {
       const { text, voiceSettings } = req.body;
       let audioWavBase64: string | null = null;
-      try {
-        const s2v = await txClient.signToVoice({
-          pose_sequence: [
-            {
-              gloss: String(text).trim().split(/\s+/)[0]?.toUpperCase() || "HELLO",
-              t: 0,
-              right_wrist: [0.68, 0.35, 0.12],
-              left_wrist: [0.34, 0.72, 0.0],
-              right_open: 0.9,
-              left_open: 0.3,
-              elbow_angle: 60,
-            },
-          ],
-          gloss_hint: String(text),
-          pitch: Number(voiceSettings?.pitch || 1.0),
-          speed: Number(voiceSettings?.speed || 1.0),
-        });
-        audioWavBase64 = s2v.audio?.audio_wav_base64 || s2v.audio_wav_base64 || null;
-      } catch {
-        // client SpeechSynthesis handles audio
+      if (pythonAvailable) {
+        try {
+          const s2v = await txClient.signToVoice({
+            pose_sequence: [
+              {
+                gloss: String(text).trim().split(/\s+/)[0]?.toUpperCase() || "HELLO",
+                t: 0,
+                right_wrist: [0.68, 0.35, 0.12],
+                left_wrist: [0.34, 0.72, 0.0],
+                right_open: 0.9,
+                left_open: 0.3,
+                elbow_angle: 60,
+              },
+            ],
+            gloss_hint: String(text),
+            pitch: Number(voiceSettings?.pitch || 1.0),
+            speed: Number(voiceSettings?.speed || 1.0),
+          });
+          audioWavBase64 = s2v.audio?.audio_wav_base64 || s2v.audio_wav_base64 || null;
+        } catch {
+          // fall through to Gemini TTS
+        }
+      }
+      if (!audioWavBase64) {
+        audioWavBase64 = await synthesizeGeminiSpeechWav(String(text), voiceSettings?.voiceName);
       }
       return res.json({
         text,
         pitch: voiceSettings?.pitch || 1.0,
         speed: voiceSettings?.speed || 1.0,
-        voiceName: voiceSettings?.voiceName || "Zephyr",
-        synthesized: true,
+        voiceName: voiceSettings?.voiceName || "Kore",
+        synthesized: Boolean(audioWavBase64),
         audioWavBase64,
       });
     }
@@ -871,6 +944,7 @@ async function startServer() {
         frames_base64,
         hand_summary,
         signLanguage = "ASL",
+        voicePreset,
       } = req.body;
 
       let recognizedGloss: string | undefined = gloss_hint ? String(gloss_hint).toUpperCase() : undefined;
@@ -887,7 +961,7 @@ async function startServer() {
             },
           }));
           parts.push({
-            text: `You are Vakhya's real-time ${signLanguage} sign language interpreter. Inspect these sequential webcam frames of a user signing (hand landmarks summary: ${hand_summary || "active hands"}). If an intentional sign or gesture is visible, identify the exact ${signLanguage} gloss and natural spoken English translation. If hands are resting or no clear sign/gesture is shown, set hasSign to false and gloss to NONE.`,
+            text: `You are Vakhya's real-time ${signLanguage} sign language interpreter. Inspect these sequential webcam frames of a person signing (MediaPipe hand geometry: ${hand_summary || "active hands"}). Identify the ${signLanguage} gloss and concise natural English phrase. Only set hasSign to false if hands are completely absent or clearly resting idle with zero gesture.`,
           });
 
           const parsed = await callGeminiJson(parts, {
@@ -904,7 +978,12 @@ async function startServer() {
             },
           });
 
-          if (parsed && parsed.hasSign === false) {
+          if (parsed?.hasSign && parsed?.gloss && parsed?.sentence && String(parsed.gloss).toUpperCase() !== "NONE") {
+            recognizedGloss = String(parsed.gloss).trim().toUpperCase();
+            visionSentence = String(parsed.sentence).trim();
+            visionConfidence = Number(parsed.confidence ?? 0.92);
+            visionModel = "vakhya-gemini-vision-3dcnn";
+          } else if (parsed && parsed.hasSign === false && !String(hand_summary || "").includes("localHint=")) {
             return res.json({
               recognized: false,
               gloss: "",
@@ -913,16 +992,26 @@ async function startServer() {
               model: "vakhya-gemini-vision",
             });
           }
-
-          if (parsed?.gloss && parsed?.sentence && String(parsed.gloss).toUpperCase() !== "NONE") {
-            recognizedGloss = String(parsed.gloss).trim().toUpperCase();
-            visionSentence = String(parsed.sentence).trim();
-            visionConfidence = Number(parsed.confidence ?? 0.92);
-            visionModel = "vakhya-gemini-vision-3dcnn";
-          }
         } catch (err: any) {
-          console.log("[VAKHYA S2V] Fallback to Python 3D-CNN pose classifier:", err?.message || "timeout");
+          console.log("[VAKHYA S2V] Fallback to pose classifier:", err?.message || "timeout");
         }
+      }
+
+      const PHRASE_MAP: Record<string, string> = {
+        HELLO: "Hello!",
+        STOP: "Wait / Stop.",
+        YES: "Yes.",
+        GOOD: "Good, yes.",
+        I_LOVE_YOU: "I love you.",
+        CALL_ME: "Call me.",
+        HELP: "Please help.",
+        TWO: "Two / Peace.",
+        YOU: "You.",
+        THANK_YOU: "Thank you!",
+      };
+      const hintMatch = String(hand_summary || "").match(/localHint=([A-Z_]+)/);
+      if (hintMatch && !recognizedGloss) {
+        recognizedGloss = hintMatch[1];
       }
 
       if (pythonAvailable) {
@@ -933,13 +1022,23 @@ async function startServer() {
             pitch: Number(pitch),
             speed: Number(speed),
           });
+          const resolvedGloss = recognizedGloss || s2v.recognized_gloss || "HELLO";
+          const resolvedSentence =
+            visionSentence ||
+            (recognizedGloss && PHRASE_MAP[recognizedGloss]) ||
+            s2v.text ||
+            s2v.recognized_gloss ||
+            "Hello";
+          const audioWavBase64 =
+            s2v.audio?.audio_wav_base64 ||
+            (await synthesizeGeminiSpeechWav(resolvedSentence, voicePreset));
           return res.json({
             recognized: true,
-            gloss: recognizedGloss || s2v.recognized_gloss || "HELLO",
-            sentence: visionSentence || s2v.text || s2v.recognized_gloss || "Hello",
+            gloss: resolvedGloss,
+            sentence: resolvedSentence,
             confidence: visionConfidence ?? s2v.confidence ?? 0.85,
             model: visionModel || s2v.model || "vakhya-3dcnn-spatiotemporal",
-            audioWavBase64: s2v.audio?.audio_wav_base64 || null,
+            audioWavBase64,
             non_manual_markers: s2v.non_manual_markers || {},
             latency: s2v.latency || null,
           });
@@ -949,24 +1048,52 @@ async function startServer() {
       }
 
       if (visionSentence) {
+        const audioWavBase64 = await synthesizeGeminiSpeechWav(visionSentence, voicePreset);
         return res.json({
           recognized: true,
           gloss: recognizedGloss || "SIGN",
           sentence: visionSentence,
           confidence: visionConfidence ?? 0.9,
           model: visionModel || "vakhya-gemini-vision",
-          audioWavBase64: null,
+          audioWavBase64,
         });
       }
+
+      if (!recognizedGloss && Array.isArray(pose_sequence) && pose_sequence.length >= 3) {
+        const avgRightY =
+          pose_sequence.reduce((acc: number, f: any) => acc + (f?.right_wrist?.[1] ?? 0.6), 0) /
+          pose_sequence.length;
+        const avgRightOpen =
+          pose_sequence.reduce((acc: number, f: any) => acc + (f?.right_open ?? 0.4), 0) /
+          pose_sequence.length;
+        const dxSpan =
+          Math.max(...pose_sequence.map((f: any) => f?.right_wrist?.[0] ?? 0.65)) -
+          Math.min(...pose_sequence.map((f: any) => f?.right_wrist?.[0] ?? 0.65));
+
+        if (avgRightOpen >= 0.7 && (avgRightY < 0.5 || dxSpan > 0.08)) {
+          recognizedGloss = "HELLO";
+        } else if (avgRightOpen >= 0.7) {
+          recognizedGloss = "STOP";
+        } else if (avgRightOpen <= 0.25 && dxSpan > 0.04) {
+          recognizedGloss = "YES";
+        }
+      }
+
       if (recognizedGloss) {
-        const readable = recognizedGloss.replace(/_/g, " ").toLowerCase();
+        const readable =
+          PHRASE_MAP[recognizedGloss] ||
+          (() => {
+            const r = recognizedGloss.replace(/_/g, " ").toLowerCase();
+            return r.charAt(0).toUpperCase() + r.slice(1);
+          })();
+        const audioWavBase64 = await synthesizeGeminiSpeechWav(readable, voicePreset);
         return res.json({
           recognized: true,
           gloss: recognizedGloss,
-          sentence: readable.charAt(0).toUpperCase() + readable.slice(1),
+          sentence: readable,
           confidence: 0.82,
-          model: "vakhya-ts-gloss-hint",
-          audioWavBase64: null,
+          model: "vakhya-ts-kinematic",
+          audioWavBase64,
         });
       }
       return res.json({

@@ -3,35 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import {
-  PhoneOff,
-  Video,
-  Mic,
-  MicOff,
-  Sparkles,
-  ShieldAlert,
-  Sliders,
-  Maximize2,
-  Copy,
-  MessageSquare,
-  Volume2,
-  UserCheck,
-  CheckCircle,
-  Clock,
-  RefreshCw,
-  X,
-  Send,
-  AlertTriangle,
-  UserPlus,
-  Smartphone,
-  Zap,
-  VolumeX,
-  Languages,
-  Bell
-} from "lucide-react";
-import { theme } from "../theme";
+import React from "react";
+import { AnimatePresence } from "motion/react";
+import { PhoneOff } from "lucide-react";
 import InCallScreen from "./calls/InCallScreen";
 import IncomingCallIntent from "./IncomingCallIntent";
 
@@ -64,41 +38,50 @@ export default function CallingOverlay({
 }: CallingOverlayProps) {
   if (callState === "idle") return null;
 
+  const friendlyRingingText =
+    ringingStatus && ringingStatus.includes("OFFLINE")
+      ? "Peer is offline — ask them to open VAKHYA on their device"
+      : ringingStatus && ringingStatus.includes("RINGING")
+        ? "Ringing…"
+        : "Calling…";
+
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 bg-black/95 backdrop-blur-3xl z-50 flex items-center justify-center font-sans overflow-hidden">
-        {/* 1. OUTGOING CALL VIEW */}
+      <div className="fixed inset-0 bg-[#151B29]/95 backdrop-blur-xl z-50 flex items-center justify-center font-sans overflow-hidden">
         {callState === "outgoing" && (
-          <div className="text-center space-y-8 flex flex-col items-center justify-center">
-            <div className="relative w-36 h-36 flex items-center justify-center">
-              <div className="absolute inset-0 bg-[#8A5CF6] rounded-full filter blur-2xl opacity-20 animate-pulse" />
-              <div className="absolute inset-0 border border-[#D96FF2]/30 rounded-full scale-125 animate-ping" style={{ animationDuration: "2s" }} />
-              <div className="absolute inset-0 border border-purple-500/10 rounded-full scale-150 animate-ping" style={{ animationDuration: "3s" }} />
+          <div className="text-center space-y-8 flex flex-col items-center justify-center px-6">
+            <div className="relative w-32 h-32 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border border-[#22F3A6]/35 scale-125 animate-ping" style={{ animationDuration: "2.2s" }} />
               <img
                 src={callContact?.avatar}
                 alt={callContact?.name}
-                className="w-24 h-24 rounded-full border-2 border-[#D96FF2] relative z-10"
+                className="w-28 h-28 rounded-full border-2 border-[#22F3A6] bg-[#1D2538] relative z-10 object-cover shadow-2xl"
                 referrerPolicy="no-referrer"
               />
             </div>
 
-            <div className="space-y-2">
-              <h3 className="text-xl font-black text-white">{callContact?.name}</h3>
-              <span className="text-xs font-semibold text-purple-300 uppercase tracking-widest font-mono animate-pulse block">
-                {ringingStatus || "SECURING WebRTC SIGNALLING..."}
-              </span>
+            <div className="space-y-1.5">
+              <h3 className="text-2xl font-bold text-white tracking-tight">
+                {callContact?.name || "Vakhya User"}
+              </h3>
+              <p className="text-sm text-[#22F3A6] font-medium">
+                {friendlyRingingText}
+              </p>
+              <p className="text-xs text-slate-400">
+                {callType === "video" ? "Video call with live sign & voice translation" : "Voice call"}
+              </p>
             </div>
 
             <button
               onClick={onEndCall}
-              className="p-4 rounded-full bg-red-600 text-white hover:bg-red-700 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(220,38,38,0.4)]"
+              className="w-14 h-14 rounded-full bg-red-600 text-white hover:bg-red-700 active:scale-95 transition-all shadow-lg flex items-center justify-center cursor-pointer"
+              title="Cancel call"
             >
               <PhoneOff className="w-6 h-6" />
             </button>
           </div>
         )}
 
-        {/* 2. INCOMING CALL VIEW */}
         <IncomingCallIntent
           isOpen={callState === "incoming"}
           contact={callContact}
@@ -107,7 +90,6 @@ export default function CallingOverlay({
           onDecline={onEndCall}
         />
 
-        {/* 3. CONNECTED ACTIVE CALL VIEW */}
         {callState === "connected" && (
           <InCallScreen
             remoteUser={

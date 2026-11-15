@@ -17,6 +17,11 @@ export interface HandDetectionResult {
   motionEnergy: number;
   hasActiveHands: boolean;
   handSummary: string;
+  detectedLocalSign?: {
+    gloss: string;
+    sentence: string;
+    confidence: number;
+  } | null;
 }
 
 const HAND_CONNECTIONS = [
@@ -70,18 +75,101 @@ export async function initHandLandmarker(): Promise<HandLandmarker | null> {
   return initPromise;
 }
 
-function fingerOpenScore(lm: Array<{ x: number; y: number; z: number }>): number {
-  if (!lm || lm.length < 21) return 0.5;
-  const wrist = lm[0];
-  const tips = [8, 12, 16, 20];
-  const mcps = [5, 9, 13, 17];
-  let openCount = 0;
-  for (let i = 0; i < tips.length; i++) {
-    const tipDist = Math.hypot(lm[tips[i]].x - wrist.x, lm[tips[i]].y - wrist.y);
-    const mcpDist = Math.hypot(lm[mcps[i]].x - wrist.x, lm[mcps[i]].y - wrist.y);
-    if (tipDist > mcpDist * 1.25) openCount++;
+function getFingerStates(lm: Array<{ x: number; y: number; z: number }>) {
+  if (!lm || lm.length < 21) {
+    return { thumb: false, index: false, middle: false, ring: false, pinky: false, openScore: 0.5 };
   }
-  return Number((openCount / 4).toFixed(2));
+  const wrist = lm[0];
+  // Thumb: tip (4) vs IP (3) distance from pinky MCP (17)
+  const thumbTipDist = Math.hypot(lm[4].x - lm[17].x, lm[4].y - lm[17].y);
+  const thumbIpDist = Math.hypot(lm[3].x - lm[17].x, lm[3].y - lm[17].y);
+  const thumb = thumbTipDist > thumbIpDist * 1.15;
+
+  const checkFinger = (tipIdx: number, pipIdx: number, mcpIdx: number) => {
+    const tipDist = Math.hypot(lm[tipIdx].x - wrist.x, lm[tipIdx].y - wrist.y);
+    const pipDist = Math.hypot(lm[pipIdx].x - wrist.x, lm[pipIdx].y - wrist.y);
+    const mcpDist = Math.hypot(lm[mcpIdx].x - wrist.x, lm[mcpIdx].y - wrist.y);
+    return tipDist > pipDist * 1.05 && tipDist > mcpDist * 1.25;
+  };
+
+  const index = checkFinger(8, 6, 5);
+  const middle = checkFinger(12, 10, 9);
+  const ring = checkFinger(16, 14, 13);
+  const pinky = checkFinger(20, 18, 17);
+
+  const openCount = [thumb, index, middle, ring, pinky].filter(Boolean).length;
+  return {
+    thumb,
+    index,
+    middle,
+    ring,
+    pinky,
+    openScore: Number((openCount / 5).toFixed(2)),
+  };
+}
+
+function classifyStaticSign(
+  hands: Array<{
+    label: string;
+    wrist: { x: number; y: number; z: number };
+    thumbTip: { x: number; y: number };
+    fingers: ReturnType<typeof getFingerStates>;
+  }>,
+  motionEnergy: number
+): { gloss: string; sentence: string; confidence: number } | null {
+  if (!hands.length) return null;
+
+  if (hands.length >= 2) {
+    const bothOpen = hands.every((h) => h.fingers.openScore >= 0.6);
+    const closeTogether = Math.hypot(hands[0].wrist.x - hands[1].wrist.x, hands[0].wrist.y - hands[1].wrist.y) < 0.32;
+    if (bothOpen && closeTogether) {
+      return { gloss: "HELP", sentence: "Please help.", confidence: 0.78 };
+    }
+    if (hands.every((h) => h.fingers.openScore >= 0.8)) {
+      return { gloss: "HELLO", sentence: "Hello!", confidence: 0.76 };
+    }
+  }
+
+  const h = hands[0];
+  const { thumb, index, middle, ring, pinky } = h.fingers;
+  const wy = h.wrist.y;
+
+  // ILY handshape: thumb + index + pinky extended
+  if (thumb && index && !middle && !ring && pinky) {
+    return { gloss: "I_LOVE_YOU", sentence: "I love you.", confidence: 0.88 };
+  }
+  // Call me / Y handshape: thumb + pinky
+  if (thumb && !index && !middle && !ring && pinky) {
+    return { gloss: "CALL_ME", sentence: "Call me.", confidence: 0.84 };
+  }
+  // Thumbs up / Good
+  if (thumb && !index && !middle && !ring && !pinky && h.thumbTip.y < h.wrist.y - 0.04) {
+    return { gloss: "GOOD", sentence: "Good, yes.", confidence: 0.84 };
+  }
+  // Peace / Two / Victory
+  if (!thumb && index && middle && !ring && !pinky) {
+    return { gloss: "TWO", sentence: "Two / Peace.", confidence: 0.82 };
+  }
+  // Pointing / You
+  if (!thumb && index && !middle && !ring && !pinky) {
+    return { gloss: "YOU", sentence: "You.", confidence: 0.78 };
+  }
+  // Open palm high / waving -> Hello or Thank You near chin
+  if (index && middle && ring && pinky) {
+    if (wy < 0.45 && motionEnergy > 1.0) {
+      return { gloss: "HELLO", sentence: "Hello!", confidence: 0.8 };
+    }
+    if (wy >= 0.35 && wy <= 0.62 && motionEnergy < 1.2) {
+      return { gloss: "STOP", sentence: "Wait / Stop.", confidence: 0.76 };
+    }
+    return { gloss: "HELLO", sentence: "Hello!", confidence: 0.74 };
+  }
+  // Closed fist -> Yes / Understand
+  if (!thumb && !index && !middle && !ring && !pinky && motionEnergy > 0.8) {
+    return { gloss: "YES", sentence: "Yes.", confidence: 0.75 };
+  }
+
+  return null;
 }
 
 export class WebcamSignTracker {
@@ -92,6 +180,7 @@ export class WebcamSignTracker {
   private prevFrame: Uint8ClampedArray | null = null;
   private startTs = performance.now();
   private lastVideoTime = -1;
+  private lastDetectTs = 0;
 
   constructor() {
     this.offscreen = document.createElement("canvas");
@@ -100,13 +189,13 @@ export class WebcamSignTracker {
     this.offCtx = this.offscreen.getContext("2d", { willReadFrequently: true });
 
     this.snapCanvas = document.createElement("canvas");
-    this.snapCanvas.width = 240;
-    this.snapCanvas.height = 180;
+    this.snapCanvas.width = 320;
+    this.snapCanvas.height = 240;
     this.snapCtx = this.snapCanvas.getContext("2d");
   }
 
   captureCompactFrame(video: HTMLVideoElement, mirrorX = true): string | null {
-    if (!this.snapCtx || video.readyState < 2) return null;
+    if (!this.snapCtx || video.readyState < 2 || video.videoWidth === 0) return null;
     const w = this.snapCanvas.width;
     const h = this.snapCanvas.height;
     this.snapCtx.save();
@@ -116,19 +205,19 @@ export class WebcamSignTracker {
     }
     this.snapCtx.drawImage(video, 0, 0, w, h);
     this.snapCtx.restore();
-    return this.snapCanvas.toDataURL("image/jpeg", 0.55);
+    return this.snapCanvas.toDataURL("image/jpeg", 0.75);
   }
 
   detectFrame(video: HTMLVideoElement): HandDetectionResult {
     const now = performance.now();
     const relT = Number((((now - this.startTs) % 2000) / 2000).toFixed(3));
 
-    // 1. Always compute real pixel-difference motion energy for gesture boundary detection
+    // 1. Real pixel-difference motion energy for gesture boundary detection
     let motionEnergy = 0;
     let rightCentroid: [number, number] | null = null;
     let leftCentroid: [number, number] | null = null;
 
-    if (this.offCtx && video.readyState >= 2) {
+    if (this.offCtx && video.readyState >= 2 && video.videoWidth > 0) {
       const w = this.offscreen.width;
       const h = this.offscreen.height;
       this.offCtx.drawImage(video, 0, 0, w, h);
@@ -155,9 +244,8 @@ export class WebcamSignTracker {
             diffSum += diff;
           }
 
-          // Skin-chromaticity + active motion mask for fallback tracking
-          const isSkin = r > 70 && g > 40 && b > 20 && r > g && r > b && r - Math.min(g, b) > 15;
-          if ((isSkin && diff > 8) || diff > 28) {
+          // Active motion mask for CV fallback tracking
+          if (diff > 18) {
             const nx = x / w;
             const ny = y / h;
             if (nx >= 0.5) {
@@ -175,15 +263,22 @@ export class WebcamSignTracker {
 
       this.prevFrame = new Uint8ClampedArray(data);
       motionEnergy = diffSum / (w * h);
-      if (rc > 12) rightCentroid = [Number((rx / rc).toFixed(3)), Number((ry / rc).toFixed(3))];
-      if (lc > 12) leftCentroid = [Number((lx / lc).toFixed(3)), Number((ly / lc).toFixed(3))];
+      if (rc > 22) rightCentroid = [Number((rx / rc).toFixed(3)), Number((ry / rc).toFixed(3))];
+      if (lc > 22) leftCentroid = [Number((lx / lc).toFixed(3)), Number((ly / lc).toFixed(3))];
     }
 
     // 2. Primary: MediaPipe HandLandmarker real 21-point detection
-    if (sharedLandmarker && video.readyState >= 2 && video.currentTime !== this.lastVideoTime) {
+    if (
+      sharedLandmarker &&
+      video.readyState >= 2 &&
+      video.videoWidth > 0 &&
+      video.currentTime !== this.lastVideoTime
+    ) {
       this.lastVideoTime = video.currentTime;
+      const ts = Math.max(this.lastDetectTs + 1, Math.round(now));
+      this.lastDetectTs = ts;
       try {
-        const res = sharedLandmarker.detectForVideo(video, now);
+        const res = sharedLandmarker.detectForVideo(video, ts);
         if (res.landmarks && res.landmarks.length > 0) {
           let rw: [number, number, number] = [0.68, 0.45, 0.1];
           let lw: [number, number, number] = [0.32, 0.65, 0.05];
@@ -192,19 +287,35 @@ export class WebcamSignTracker {
 
           const labels = res.handednesses?.map((h) => h[0]?.categoryName || "Right") || [];
           const summaryParts: string[] = [];
+          const analyzedHands: Array<{
+            label: string;
+            wrist: { x: number; y: number; z: number };
+            thumbTip: { x: number; y: number };
+            fingers: ReturnType<typeof getFingerStates>;
+          }> = [];
+
           res.landmarks.forEach((lm, i) => {
             const label = labels[i] || (lm[0].x >= 0.5 ? "Right" : "Left");
             const wrist = lm[0];
-            const open = fingerOpenScore(lm);
-            summaryParts.push(`${label}:wrist(${wrist.x.toFixed(2)},${wrist.y.toFixed(2)}),open=${open}`);
+            const fingers = getFingerStates(lm);
+            const fingerBits = `${Number(fingers.thumb)},${Number(fingers.index)},${Number(fingers.middle)},${Number(fingers.ring)},${Number(fingers.pinky)}`;
+            summaryParts.push(
+              `${label}:wrist(${wrist.x.toFixed(2)},${wrist.y.toFixed(2)}),fingers=[${fingerBits}],open=${fingers.openScore}`
+            );
+            analyzedHands.push({ label, wrist, thumbTip: lm[4], fingers });
             if (label === "Right") {
               rw = [Number(wrist.x.toFixed(3)), Number(wrist.y.toFixed(3)), Number((wrist.z || 0).toFixed(3))];
-              rightOpen = open;
+              rightOpen = fingers.openScore;
             } else {
               lw = [Number(wrist.x.toFixed(3)), Number(wrist.y.toFixed(3)), Number((wrist.z || 0).toFixed(3))];
-              leftOpen = open;
+              leftOpen = fingers.openScore;
             }
           });
+
+          const localSign = classifyStaticSign(analyzedHands, motionEnergy);
+          if (localSign) {
+            summaryParts.push(`localHint=${localSign.gloss}`);
+          }
 
           const elbowAngle = Math.round(Math.max(25, Math.min(130, 120 - rw[1] * 85)));
           return {
@@ -222,6 +333,7 @@ export class WebcamSignTracker {
             motionEnergy,
             hasActiveHands: true,
             handSummary: summaryParts.join("; "),
+            detectedLocalSign: localSign,
           };
         }
       } catch {
@@ -229,7 +341,7 @@ export class WebcamSignTracker {
       }
     }
 
-    // 3. Real pixel/motion fallback landmarks derived directly from camera pixels
+    // 3. Fallback motion tracker (only when MediaPipe hasn't detected hands)
     const rwPos: [number, number, number] = rightCentroid
       ? [rightCentroid[0], rightCentroid[1], 0.12]
       : [0.68, 0.6, 0.05];
@@ -263,13 +375,14 @@ export class WebcamSignTracker {
       motionEnergy,
       hasActiveHands: Boolean(rightCentroid || leftCentroid),
       handSummary: handedness.length > 0 ? `MotionHands:${handedness.join(",")}` : "NoActiveHands",
+      detectedLocalSign: null,
     };
   }
 }
 
 function buildHandFromCentroid(cx: number, cy: number): Array<{ x: number; y: number; z: number }> {
   const pts: Array<{ x: number; y: number; z: number }> = [];
-  pts.push({ x: cx, y: cy + 0.08, z: 0 }); // wrist
+  pts.push({ x: cx, y: cy + 0.08, z: 0 });
   const fingerOffsets = [
     [-0.05, 0.04],
     [-0.025, -0.02],
@@ -301,8 +414,8 @@ export function drawRealHandSkeleton(
 
   detection.landmarksList.forEach((landmarks, idx) => {
     const isRight = (detection.handedness[idx] || "Right") === "Right";
-    ctx.strokeStyle = isRight ? "#22D3EE" : "#C9A9E9";
-    ctx.lineWidth = 2.2;
+    ctx.strokeStyle = isRight ? "#22F3A6" : "#9E7BFF";
+    ctx.lineWidth = 2;
 
     HAND_CONNECTIONS.forEach(([a, b]) => {
       const p1 = landmarks[a];
@@ -318,28 +431,13 @@ export function drawRealHandSkeleton(
       ctx.stroke();
     });
 
-    ctx.fillStyle = isRight ? "#34D399" : "#D96FF2";
+    ctx.fillStyle = isRight ? "#22F3A6" : "#C0AAFF";
     landmarks.forEach((pt) => {
       const x = (mirrorX ? 1 - pt.x : pt.x) * width;
       const y = pt.y * height;
       ctx.beginPath();
-      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.arc(x, y, 2.5, 0, Math.PI * 2);
       ctx.fill();
     });
   });
-
-  ctx.fillStyle = detection.hasActiveHands ? "#34D399" : "rgba(201, 169, 233, 0.85)";
-  ctx.font = "bold 9px JetBrains Mono, monospace";
-  const label =
-    detection.engine === "mediapipe-hand-landmarker"
-      ? "MEDIAPIPE 21-PT HAND TRACKING"
-      : "CV MOTION HAND TRACKER";
-  ctx.fillText(label, 8, 16);
-  ctx.fillText(
-    detection.hasActiveHands
-      ? `HANDS: ${detection.landmarksList.length} | ACTIVE`
-      : "SHOW HANDS TO CAMERA",
-    8,
-    30
-  );
 }

@@ -43,6 +43,8 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
   const isCameraActiveRef = useRef(false);
   const trackerRef = useRef<WebcamSignTracker | null>(null);
   const poseBufferRef = useRef<PoseKeyframe[]>([]);
+  const frameSnapsRef = useRef<string[]>([]);
+  const handSummaryRef = useRef<string>("");
   const lastAutoInferRef = useRef<number>(0);
 
   // Toggle Camera
@@ -74,6 +76,7 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
         cancelAnimationFrame(animationRef.current);
       }
       poseBufferRef.current = [];
+      frameSnapsRef.current = [];
     }
 
     return () => {
@@ -83,7 +86,11 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
     };
   }, [isCameraActive]);
 
-  const inferPoseBuffer = async (poses: PoseKeyframe[]) => {
+  const inferPoseBuffer = async (
+    poses: PoseKeyframe[],
+    framesBase64: string[],
+    handSummary: string
+  ) => {
     if (poses.length < 4 || isTranslating) return;
     setIsTranslating(true);
     setError(null);
@@ -93,12 +100,16 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           pose_sequence: poses.slice(-18),
+          frames_base64: framesBase64.slice(0, 3),
+          hand_summary: handSummary,
+          signLanguage: profile.primarySignLanguage || "ASL",
           pitch: profile.voiceSettings.pitch,
           speed: profile.voiceSettings.speed,
         }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Sign-to-voice recognition failed");
+      if (data.recognized === false) return;
       if (data.gloss) setCurrentGlosses(data.gloss);
       if (data.sentence) {
         setTranslatedSentence(data.sentence);
@@ -135,16 +146,28 @@ export default function SignToSpeech({ profile }: SignToSpeechProps) {
 
         if (detection.hasActiveHands && frameCounter % 3 === 0) {
           poseBufferRef.current.push(detection.poseFrame);
-          if (poseBufferRef.current.length > 24) {
+          if (poseBufferRef.current.length > 20) {
             poseBufferRef.current.shift();
+          }
+          handSummaryRef.current = detection.handSummary;
+          if (
+            frameSnapsRef.current.length === 0 ||
+            (poseBufferRef.current.length === 5 && frameSnapsRef.current.length < 2) ||
+            (poseBufferRef.current.length >= 10 && frameSnapsRef.current.length < 3)
+          ) {
+            const snap = trackerRef.current.captureCompactFrame(video, true);
+            if (snap) frameSnapsRef.current.push(snap);
           }
 
           const now = Date.now();
-          if (poseBufferRef.current.length >= 12 && now - lastAutoInferRef.current > 3200) {
+          if (poseBufferRef.current.length >= 10 && now - lastAutoInferRef.current > 2400) {
             lastAutoInferRef.current = now;
             const snapshot = [...poseBufferRef.current];
+            const snaps = [...frameSnapsRef.current];
+            const summary = handSummaryRef.current;
             poseBufferRef.current = [];
-            void inferPoseBuffer(snapshot);
+            frameSnapsRef.current = [];
+            void inferPoseBuffer(snapshot, snaps, summary);
           }
         }
       }
