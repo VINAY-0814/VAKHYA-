@@ -1,0 +1,93 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: vakhya-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vakhya}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vakhya_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-vakhya_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vakhya} -d ${POSTGRES_DB:-vakhya_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: vakhya-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  translation-service:
+    build:
+      context: ./services/translation
+      dockerfile: Dockerfile
+    container_name: vakhya-translation
+    restart: unless-stopped
+    environment:
+      TRANSLATION_HTTP_PORT: 8000
+      V2S_TCP_PORT: 9001
+      S2V_TCP_PORT: 9002
+    ports:
+      - "8000:8000"
+      - "9001:9001"
+      - "9002:9002"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vakhya-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      translation-service:
+        condition: service_healthy
+    environment:
+      PORT: 4000
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: postgres://${POSTGRES_USER:-vakhya}:${POSTGRES_PASSWORD:-vakhya_secret}@postgres:5432/${POSTGRES_DB:-vakhya_db}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-vakhya-dev-jwt-secret-change-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-vakhya-dev-refresh-secret-change-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      TRANSLATION_SERVICE_URL: http://translation-service:8000
+      TRANSLATION_TCP_HOST: translation-service
+      V2S_TCP_PORT: 9001
+      S2V_TCP_PORT: 9002
+      MEDIASOUP_LISTEN_IP: 0.0.0.0
+      MEDIASOUP_ANNOUNCED_IP: ${MEDIASOUP_ANNOUNCED_IP:-127.0.0.1}
+      MEDIASOUP_RTC_MIN_PORT: 40000
+      MEDIASOUP_RTC_MAX_PORT: 40100
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-no-reply@vakhya.app}
+      FIREBASE_SERVICE_ACCOUNT_JSON: ${FIREBASE_SERVICE_ACCOUNT_JSON:-}
+    ports:
+      - "4000:4000"
+      - "40000-40100:40000-40100/udp"
+
+volumes:
+  postgres_data:

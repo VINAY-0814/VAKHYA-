@@ -1,0 +1,116 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+:root {
+  /* =============================================================
+     WHATSAPP PREMIUM GREEN - Light Theme Redesign
+     ============================================================= */
+  --bg-base: #F0F2F5;
+  --bg-gradient: linear-gradient(135deg, #E7FFEF 0%, #F0F2F5 50%, #EFEAE2 100%);
+  --color-primary-deep: #128C7E;
+  --color-primary-orchid: #25D366;
+  --color-primary-lilac: #075E54;
+  --color-primary-lightBg: #DCF8C6;
+  --color-primary-darkPlum: #111B21;
+  --color-primary-midnight: #F0F2F5;
+  --color-accent-violet: #25D366;
+  --color-accent-magenta: #128C7E;
+  --color-accent-cyan: #34B7F1;
+  --gradient-primary: linear-gradient(135deg, #128C7E 0%, #25D366 50%, #DCF8C6 100%);
+  --gradient-primary-light: linear-gradient(135deg, #FFFFFF 0%, #E7FFEF 100%);
+  --gradient-accent: linear-gradient(135deg, #075E54 0%, #25D366 100%);
+  --gradient-accent-btn: linear-gradient(135deg, #128C7E 0%, #25D366 100%);
+  --gradient-aurora: linear-gradient(135deg, #E7FFEF 0%, #F0F2F5 50%, #EFEAE2 100%);
+  --gradient-glass-border: linear-gradient(135deg, rgba(37, 211, 102, 0.2) 0%, rgba(18, 140, 126, 0.1) 100%);
+  --gradient-glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(247, 248, 250, 0.9) 100%);
+  --text-primary: #111B21;
+  --text-secondary: #667781;
+  --accent-primary: #25D366;
+  --border-subtle: #D1D7DB;
+  --shadow-elevation: 0 8px 32px rgba(18, 140, 126, 0.08);
+  --glow-color-1: rgba(37, 211, 102, 0.07);
+  --glow-color-2: rgba(18, 140, 126, 0.05);
+  --glow-color-3: rgba(52, 183, 241, 0.04);
+  --glass-light-bg: rgba(255, 255, 255, 0.85);
+  --glass-light-border: #D1D7DB;
+  --glass-light-shadow: 0 8px 32px 0 rgba(18, 140, 126, 0.06);
+  --glass-dark-bg: rgba(255, 255, 255, 0.9);
+  --glass-dark-border: #D1D7DB;
+  --glass-dark-shadow: 0 12px 40px rgba(18, 140, 126, 0.08);
+  --glass-input-bg: rgba(255, 255, 255, 0.8);
+  --glass-input-border: #D1D7DB;
+  --glass-input-bg-focus: rgba(255, 255, 255, 0.95);
+  --glass-input-border-focus: #25D366;
+  --glass-input-ring-focus: rgba(37, 211, 102, 0.2);
+  --glass-input-text: #111B21;
+  --glass-input-placeholder: #8696A0;
+  --button-accent-hover-shadow: 0 8px 24px rgba(37, 211, 102, 0.3);
+  --button-accent-text: #ffffff;
+  --button-glass-bg: rgba(255, 255, 255, 0.75);
+  --button-glass-bg-hover: rgba(255, 255, 255, 0.9);
+  --button-glass-border: #D1D7DB;
+  --button-glass-text: #667781;
+  --tag-glass-bg: #E7FFEF;
+  --tag-glass-border: #D1D7DB;
+  --tag-glass-text: #128C7E;
+  --scrollbar-thumb: rgba(37, 211, 102, 0.25);
+  --scrollbar-thumb-hover: rgba(37, 211, 102, 0.45);
+}
+
+[data-theme="dark"] {
+  /* =============================================================
+     WHATSAPP PREMIUM GREEN - Dark Theme Redesign
+     ============================================================= */
+  --bg-base: #111B21;
+  --bg-gradient: linear-gradient(180deg, #111B21 0%, #202C33 50%, #111B21 100%);
+  --color-primary-deep: #202C33;
+  --color-primary-orchid: #25D366;
+  --color-primary-lilac: #128C7E;
+  --color-primary-lightBg: #2A3942;
+  --color-primary-darkPlum: #111B21;
+  --color-primary-midnight: #111B21;
+  --color-accent-violet: #25D366;
+  --color-accent-magenta: #128C7E;
+  --color-accent-cyan: #34B7F1;
+  --gradient-primary: linear-gradient(135deg, #202C33 0%, #2A3942 50%, #25D366 100%);
+  --gradient-primary-light: linear-gradient(135deg, #202C33 0%, #2A3942 100%);
+  --gradient-accent: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+  --gradient-accent-btn: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+  --gradient-aurora: linear-gradient(180deg, #111B21 0%, #202C33 50%, #111B21 100%);
+  --gradient-glass-border: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.05) 100%);
+  --gradient-glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+  --text-primary: #ffffff;
+  --text-secondary: #8696A0;
+  --accent-primary: #25D366;
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --shadow-elevation: 0 8px 32px rgba(0, 0, 0, 0.37);
+  --glow-color-1: rgba(37, 211, 102, 0.2);
+  --glow-color-2: rgba(18, 140, 126, 0.15);
+  --glow-color-3: rgba(52, 183, 241, 0.1);
+  --glass-light-bg: rgba(255, 255, 255, 0.1);
+  --glass-light-border: rgba(255, 255, 255, 0.2);
+  --glass-light-shadow: 0 8px 32px 0 rgba(18, 140, 126, 0.15);
+  --glass-dark-bg: rgba(32, 44, 51, 0.4);
+  --glass-dark-border: rgba(255, 255, 255, 0.1);
+  --glass-dark-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --glass-input-bg: rgba(255, 255, 255, 0.05);
+  --glass-input-border: rgba(255, 255, 255, 0.1);
+  --glass-input-bg-focus: rgba(255, 255, 255, 0.1);
+  --glass-input-border-focus: rgba(37, 211, 102, 0.5);
+  --glass-input-ring-focus: rgba(37, 211, 102, 0.3);
+  --glass-input-text: #ffffff;
+  --glass-input-placeholder: rgba(255, 255, 255, 0.4);
+  --button-accent-hover-shadow: 0 0 20px rgba(37, 211, 102, 0.4);
+  --button-accent-text: #ffffff;
+  --button-glass-bg: rgba(255, 255, 255, 0.05);
+  --button-glass-bg-hover: rgba(255, 255, 255, 0.1);
+  --button-glass-border: rgba(255, 255, 255, 0.1);
+  --button-glass-text: #ffffff;
+  --tag-glass-bg: rgba(255, 255, 255, 0.05);
+  --tag-glass-border: rgba(255, 255, 255, 0.1);
+  --tag-glass-text: #8696A0;
+  --scrollbar-thumb: rgba(37, 211, 102, 0.25);
+  --scrollbar-thumb-hover: rgba(37, 211, 102, 0.45);
+}

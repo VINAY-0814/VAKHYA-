@@ -1,0 +1,6 @@
+{
+  "name": "VAKHYA — Breaking Silence with AI",
+  "description": "Bidirectional sign-language and voice video calling platform enabling accessible 1-to-1 communication between Deaf and hearing users.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "VAKHYA",
+    "slug": "vakhya-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "vakhya",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B1F24"
+    },
+    "android": {
+      "package": "com.vakhya.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0B1F24"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.VIBRATE",
+        "android.permission.USE_FULL_SCREEN_INTENT",
+        "android.permission.WAKE_LOCK"
+      ],
+      "googleServicesFile": "./google-services.json"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "VAKHYA needs camera access for 1-to-1 video calls and sign-language translation.",
+          "microphonePermission": "VAKHYA needs microphone access for voice-to-sign translation during calls."
+        }
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/messaging"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
